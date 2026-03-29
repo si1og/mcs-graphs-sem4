@@ -1,0 +1,10 @@
+\usepackage{graphicx}
+\usepackage{float}
+\newcommand{\screenshot}[3][0.9]{
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=#1\textwidth]{img/#2}
+        \caption{#3}
+        \label{fig:#2}
+    \end{figure}
+}

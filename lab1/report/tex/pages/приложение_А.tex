@@ -1,0 +1,200 @@
+\section*{Приложение A. Заголовочный файл и реализация класса \texttt{Universe}}
+\addcontentsline{toc}{section}{Приложение A. Заголовочный файл и реализация класса \texttt{Universe}}
+
+\begin{lstlisting}[language=C++, numbers=left, basicstyle=\ttfamily\scriptsize]
+// universe.h
+#pragma once
+#include <string>
+#include <map>
+#include <vector>
+#include <iostream>
+#include <iomanip>
+#include <stdexcept>
+#include <random>
+#include <algorithm>
+
+#include "constants.h"
+
+class Universe {
+    private:
+        std::vector<std::string> elements;
+
+        void printTableCompact() const;
+        void printTablePaged() const;
+
+    protected:
+        int depth;
+        int maxMultiplicity;
+
+    public:
+        Universe();
+        Universe(int depth, int maxMultiplicity);
+        ~Universe();
+
+        static std::vector<std::string> generateGrayCode(int n);
+
+        int getDepth() const;
+        int getMaxMultiplicity() const;
+        const std::vector<std::string>& getElements() const;
+
+        bool contains(const std::string& element) const;
+        int size() const;
+
+        void print() const;
+        void printTable() const;
+};
+
+// universe.cpp
+#include "universe.h"
+
+Universe::Universe() : depth(0), maxMultiplicity(0) {};
+
+Universe::Universe(int depth, int maxMultiplicity)
+    : depth(depth), maxMultiplicity(maxMultiplicity) {
+
+    if (depth < 0) {
+        throw std::invalid_argument("Разрядность должна быть неотрицательной");
+    }
+
+    if (depth > RECOMMENDED_MAX_DEPTH && maxMultiplicity > 0) {
+        std::cout << "\n  Предупреждение: разрядность " << depth
+                  << " превышает рекомендуемое значение " << RECOMMENDED_MAX_DEPTH << "\n";
+        std::cout << "  Это может привести к большому потреблению памяти и времени выполнения.\n\n";
+    }
+
+    if (depth == 0) {
+        this->maxMultiplicity = 0;
+    }
+
+    if (this->maxMultiplicity < 0) {
+        throw std::invalid_argument("Максимальная кратность должна быть неотрицательной");
+    }
+
+    if (depth == 0 || this->maxMultiplicity == 0) {
+        std::cout << "\n╔════════════════════════════════════════════════════════╗\n";
+        std::cout << "║              СОЗДАН ПУСТОЙ УНИВЕРСУМ                   ║\n";
+        std::cout << "╚════════════════════════════════════════════════════════╝\n";
+        std::cout << "   Разрядность: " << depth << "\n";
+        std::cout << "   Максимальная кратность: " << this->maxMultiplicity << "\n\n";
+        return;
+    }
+
+    elements = generateGrayCode(depth);
+
+    std::cout << "\n╔════════════════════════════════════════════════════════╗\n";
+    std::cout << "║              УНИВЕРСУМ УСПЕШНО СОЗДАН                  ║\n";
+    std::cout << "╚════════════════════════════════════════════════════════╝\n";
+    std::cout << "  Размер: " << elements.size() << " элементов (2^" << depth << ")\n";
+    std::cout << "  Разрядность кода Грея: " << depth << "\n";
+    std::cout << "  Максимальная кратность: " << this->maxMultiplicity << "\n\n";
+}
+
+Universe::~Universe() {};
+
+std::vector<std::string> Universe::generateGrayCode(int n) {
+    if (n < 0) {
+        throw std::invalid_argument("Разрядность должна быть неотрицательной");
+    }
+
+    std::vector<std::string> result;
+
+    if (n > 30) {
+        throw std::invalid_argument("Разрядность слишком большая (максимум 30 для безопасной работы с int)");
+    }
+
+    int total = 1 << n; // 2^n элементов
+
+    for (int i = 0; i < total; ++i) {
+        // формула кода Грея: gray = i XOR (i >> 1)
+        int gray = i ^ (i >> 1);
+
+        std::string binary;
+        for (int j = n - 1; j >= 0; --j) {
+            binary += ((gray >> j) & 1) ? '1' : '0';
+        }
+        result.push_back(binary);
+    }
+
+    return result;
+}
+
+int Universe::getDepth() const {
+    return depth;
+}
+
+int Universe::getMaxMultiplicity() const {
+    return maxMultiplicity;
+}
+
+const std::vector<std::string>& Universe::getElements() const {
+    return elements;
+}
+
+bool Universe::contains(const std::string& element) const {
+    return std::find(elements.begin(), elements.end(), element) != elements.end();
+}
+
+int Universe::size() const {
+    return static_cast<int>(elements.size());
+}
+
+void Universe::printTable() const {
+    std::cout << "\n╔════════════════════════════════════════════════════════╗\n";
+    std::cout << "║                      УНИВЕРСУМ                         ║\n";
+    std::cout << "╚════════════════════════════════════════════════════════╝\n\n";
+
+    if (maxMultiplicity == 0 || depth == 0) {
+        std::cout << "   Пустой универсум\n\n";
+        return;
+    }
+
+    std::cout << "  Разрядность: " << depth << "\n";
+    std::cout << "  Размер: " << size() << " элементов\n";
+    std::cout << "  Максимальная кратность: " << maxMultiplicity << "\n\n";
+
+    if (depth > TABLE_MODE_DEPTH_TOGGLE) {
+        printTablePaged();
+    } else {
+        printTableCompact();
+    }
+
+    std::cout << "  Все элементы имеют максимальную кратность: "
+              << maxMultiplicity << "\n\n";
+}
+
+void Universe::printTableCompact() const {
+    std::cout << "  ┌────────┬──────────────┐\n";
+    std::cout << "  │   №    │   Элемент    │\n";
+    std::cout << "  ├────────┼──────────────┤\n";
+
+    for (int i = 0; i < size(); ++i) {
+        std::cout << "  │ " << std::setw(6) << (i + 1) << " │ "
+                  << std::setw(12) << elements[i] << " │\n";
+    }
+
+    std::cout << "  └────────┴──────────────┘\n\n";
+}
+
+void Universe::printTablePaged() const {
+    std::cout << "  Элементы универсума (" << size() << " шт.):\n\n";
+
+    std::cout << "  Первые элементы:\n";
+    for (int i = 0; i < std::min(PRINT_IN_TABLE_VIEW, size()); ++i) {
+        std::cout << "    " << std::setw(6) << (i + 1) << ". " << elements[i] << "\n";
+    }
+
+    if (size() > PRINT_IN_TABLE_VIEW * 2) {
+        std::cout << "\n    ... (" << (size() - PRINT_IN_TABLE_VIEW * 2) << " элементов пропущено) ...\n\n";
+    }
+
+    if (size() > PRINT_IN_TABLE_VIEW) {
+        std::cout << "  Последние элементы:\n";
+        int start = std::max(PRINT_IN_TABLE_VIEW, size() - PRINT_IN_TABLE_VIEW);
+        for (int i = start; i < size(); ++i) {
+            std::cout << "    " << std::setw(6) << (i + 1) << ". " << elements[i] << "\n";
+        }
+    }
+
+    std::cout << "\n";
+}
+\end{lstlisting}

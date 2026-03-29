@@ -1,0 +1,1292 @@
+\section{Особенности реализации}
+
+Программа реализована на языке C++ с использованием стандарта C++17. Архитектура построена на трёх основных классах: \texttt{Universe}, \texttt{Multiset} и \texttt{CLIUI}.
+
+\subsection{Константные значения}
+
+Логика вывода и валидации строится на основе следующих констант:
+
+\begin{lstlisting}[language=C++, caption=Константные значения]
+static const int RECOMMENDED_MAX_DEPTH = 20;
+static const int MAX_DEPTH = 30;
+static const int PRINT_IN_TABLE_VIEW = 10;
+static const int TABLE_MODE_DEPTH_TOGGLE = 12;
+\end{lstlisting}
+
+\begin{itemize}
+  \item \verb|RECOMMENDED_MAX_DEPTH|~--- рекомендуемая максимальная размерность универсума, при которой все операции выполняются быстро (время выполнения $\leq 1000$~мс). При превышении выводится предупреждение. Подробнее см. пункт <<Работа программы при большой размерности универсума>>.
+  \item \verb|MAX_DEPTH|~--- жёсткое ограничение размерности, связанное с разрядностью типа \verb|int| (32 бита).
+  \item \verb|PRINT_IN_TABLE_VIEW|~--- количество первых и последних элементов, отображаемых в постраничном режиме таблицы.
+  \item \verb|TABLE_MODE_DEPTH_TOGGLE|~--- порог переключения режима отображения таблицы: при размерности выше этого значения элементы занимают слишком много места, поэтому используется постраничный вывод.
+\end{itemize}
+
+\subsection{Класс Universe}
+
+Класс \texttt{Universe} представляет универсум мультимножеств. Хранит элементы в виде вектора строк (кодов Грея), разрядность и максимальную кратность.
+
+\subsubsection*{Структура данных}
+
+\begin{lstlisting}[language=C++, caption=Поля класса Universe]
+class Universe {
+private:
+    std::vector<std::string> elements;  // элементы универсума
+protected:
+    int depth;            // разрядность кода Грея
+    int maxMultiplicity;  // максимальная кратность
+};
+\end{lstlisting}
+
+\subsubsection*{Конструктор}
+
+Конструктор принимает разрядность и максимальную кратность. Выполняет валидацию входных параметров: проверяет неотрицательность разрядности и кратности, выводит предупреждение при превышении рекомендуемой разрядности. После валидации вызывает генерацию кода Грея.
+
+\begin{itemize}
+    \item \textbf{Вход:} разрядность кода Грея ($\geq 0$), максимальная кратность ($\geq 0$).
+    \item \textbf{Выход:} инициализированный универсум с заполненным списком элементов.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Конструктор Universe]
+Universe::Universe(int depth, int maxMultiplicity)
+    : depth(depth), maxMultiplicity(maxMultiplicity) {
+
+    if (depth < 0) {
+        throw std::invalid_argument(
+            "Разрядность должна быть неотрицательной");
+    }
+
+    if (depth > RECOMMENDED_MAX_DEPTH && maxMultiplicity > 0) {
+        std::cout << "Предупреждение: разрядность " << depth
+                  << " превышает рекомендуемое значение\n";
+    }
+
+    if (depth == 0) {
+        this->maxMultiplicity = 0;
+    }
+
+    if (this->maxMultiplicity < 0) {
+        throw std::invalid_argument(
+            "Максимальная кратность должна быть неотрицательной");
+    }
+
+    elements = generateGrayCode(depth);
+}
+\end{lstlisting}
+
+\subsubsection*{Генерация кода Грея}
+
+Статический метод \texttt{generateGrayCode} генерирует все коды Грея заданной разрядности. Использует формулу $G(i) = i \oplus (i \gg 1)$, где $\oplus$~--- побитовое исключающее ИЛИ. Метод возвращает вектор строк, каждая из которых представляет $n$-битовый код Грея.
+
+\begin{itemize}
+    \item \textbf{Вход:} разрядность кода Грея ($0 \leq n \leq 30$).
+    \item \textbf{Выход:} список из $2^n$ строк, представляющих коды Грея.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Генерация кода Грея]
+std::vector<std::string> Universe::generateGrayCode(int n) {
+    if (n < 0) {
+        throw std::invalid_argument(
+            "Разрядность должна быть неотрицательной");
+    }
+
+    std::vector<std::string> result;
+
+    if (n > 30) {
+        throw std::invalid_argument(
+            "Разрядность слишком большая (максимум 30)");
+    }
+
+    int total = 1 << n; // 2^n элементов
+
+    for (int i = 0; i < total; ++i) {
+        int gray = i ^ (i >> 1);
+
+        std::string binary;
+        for (int j = n - 1; j >= 0; --j) {
+            binary += ((gray >> j) & 1) ? '1' : '0';
+        }
+        result.push_back(binary);
+    }
+
+    return result;
+}
+\end{lstlisting}
+
+\subsubsection*{Геттеры}
+
+Методы доступа к полям класса возвращают соответствующие значения без модификации состояния объекта.
+
+\begin{itemize}
+    \item \texttt{getDepth()}~--- \textbf{Вход:} универсум. \textbf{Выход:} разрядность.
+    \item \texttt{getMaxMultiplicity()}~--- \textbf{Вход:} универсум. \textbf{Выход:} максимальная кратность.
+    \item \texttt{getElements()}~--- \textbf{Вход:} универсум. \textbf{Выход:} список элементов.
+    \item \texttt{size()}~--- \textbf{Вход:} универсум. \textbf{Выход:} количество элементов.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Геттеры класса Universe]
+int Universe::getDepth() const {
+    return depth;
+}
+
+int Universe::getMaxMultiplicity() const {
+    return maxMultiplicity;
+}
+
+const std::vector<std::string>& Universe::getElements() const {
+    return elements;
+}
+
+int Universe::size() const {
+    return static_cast<int>(elements.size());
+}
+\end{lstlisting}
+
+\subsubsection*{Проверка принадлежности}
+
+Метод \texttt{contains} проверяет, принадлежит ли элемент универсуму, путём линейного поиска в векторе элементов.
+
+\begin{itemize}
+    \item \textbf{Вход:} элемент (код Грея).
+    \item \textbf{Выход:} истина, если элемент принадлежит универсуму, иначе ложь.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Проверка принадлежности элемента]
+bool Universe::contains(const std::string& element) const {
+    return std::find(elements.begin(), elements.end(), element) 
+           != elements.end();
+}
+\end{lstlisting}
+
+\subsubsection*{Вывод универсума}
+
+Метод \texttt{printTable} выводит универсум в табличном виде. В зависимости от размера универсума выбирается компактный или постраничный режим отображения.
+
+\begin{itemize}
+    \item \textbf{Вход:} универсум.
+    \item \textbf{Выход:} таблица универсума на экране.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Вывод универсума]
+void Universe::printTable() const {
+    if (maxMultiplicity == 0 || depth == 0) {
+        std::cout << "Пустой универсум\n";
+        return;
+    }
+
+    std::cout << "Разрядность: " << depth << "\n";
+    std::cout << "Размер: " << size() << " элементов\n";
+    std::cout << "Максимальная кратность: " << maxMultiplicity << "\n";
+
+    if (depth > TABLE_MODE_DEPTH_TOGGLE) {
+        printTablePaged();
+    } else {
+        printTableCompact();
+    }
+}
+\end{lstlisting}
+
+\subsection{Класс Multiset}
+
+Класс \texttt{Multiset} наследуется от \texttt{Universe} и представляет мультимножество. Элементы хранятся в ассоциативном контейнере, что обеспечивает эффективный поиск и модификацию кратностей.
+
+\subsubsection*{Структура данных}
+
+\begin{lstlisting}[language=C++, caption=Поля класса Multiset]
+class Multiset : public Universe {
+private:
+    std::map<std::string, int> elements;
+};
+\end{lstlisting}
+
+\subsubsection*{Конструктор}
+
+Конструктор копирует параметры универсума (разрядность, максимальную кратность, элементы) в новый объект мультимножества.
+
+\begin{itemize}
+    \item \textbf{Вход:} универсум.
+    \item \textbf{Выход:} пустое мультимножество, связанное с универсумом.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Конструктор Multiset]
+Multiset::Multiset(const Universe& u) : Universe(u) {};
+\end{lstlisting}
+
+\subsubsection*{Ручное заполнение}
+
+Метод \texttt{fillManual} позволяет пользователю вручную ввести элементы и их кратности. Выполняет валидацию каждого введённого элемента: проверяет принадлежность универсуму, отсутствие дубликатов и допустимость кратности. При ошибке ввода запрашивает повторный ввод.
+
+\begin{itemize}
+    \item \textbf{Вход:} количество элементов для ввода ($1 \leq n \leq$ размер универсума).
+    \item \textbf{Выход:} заполненное мультимножество.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Ручное заполнение мультимножества]
+void Multiset::fillManual(int targetSize) {
+    if (targetSize <= 0 || targetSize > size()) {
+        throw std::invalid_argument(
+            "Размер должен быть от 1 до размера универсума");
+    }
+
+    elements.clear();
+
+    for (int i = 0; i < targetSize; ++i) {
+        std::string element;
+        int multiplicity;
+
+        std::cout << "Код Грея: ";
+        std::cin >> element;
+
+        if (!contains(element)) {
+            std::cout << "Элемент не принадлежит универсуму!\n";
+            --i;
+            continue;
+        }
+
+        if (elements.count(element)) {
+            std::cout << "Элемент уже добавлен!\n";
+            --i;
+            continue;
+        }
+
+        std::cout << "Кратность (0-" << getMaxMultiplicity() << "): ";
+
+        if (!(std::cin >> multiplicity)) {
+            std::cin.clear();
+            std::cin.ignore(10000, '\n');
+            std::cout << "Ошибка: введите число!\n";
+            --i;
+            continue;
+        }
+
+        if (multiplicity < 0 || multiplicity > getMaxMultiplicity()) {
+            std::cout << "Кратность должна быть от 0 до "
+                      << getMaxMultiplicity() << "!\n";
+            --i;
+            continue;
+        }
+
+        elements[element] = multiplicity;
+    }
+}
+\end{lstlisting}
+
+\subsubsection*{Автоматическое заполнение}
+
+Метод \texttt{fillRandom} заполняет мультимножество случайными элементами и кратностями. Использует генератор псевдослучайных чисел. Сначала определяется случайный размер мультимножества, затем элементы универсума перемешиваются и выбираются первые $n$ элементов с присвоением случайных кратностей.
+
+\begin{itemize}
+    \item \textbf{Вход:} мультимножество.
+    \item \textbf{Выход:} мультимножество со случайными элементами и кратностями.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Автоматическое заполнение]
+void Multiset::fillRandom() {
+    elements.clear();
+
+    int minRandom = 1;
+    if (getMaxMultiplicity() == 0) minRandom = 0;
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    std::uniform_int_distribution<> sizeDistrib(minRandom, size());
+    int targetSize = sizeDistrib(gen);
+
+    std::vector<std::string> allElements = getElements();
+    std::shuffle(allElements.begin(), allElements.end(), gen);
+
+    std::uniform_int_distribution<> multDistrib(
+        minRandom, getMaxMultiplicity());
+
+    for (int i = 0; i < targetSize; ++i) {
+        int mult = multDistrib(gen);
+        elements[allElements[i]] = mult;
+    }
+}
+\end{lstlisting}
+
+\subsubsection*{Получение кратности}
+
+Метод \texttt{getMultiplicity} возвращает кратность элемента в мультимножестве. Если элемент отсутствует, возвращается 0.
+
+\begin{itemize}
+    \item \textbf{Вход:} элемент (код Грея).
+    \item \textbf{Выход:} кратность элемента ($\geq 0$).
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Получение кратности элемента]
+int Multiset::getMultiplicity(const std::string& element) const {
+    auto it = elements.find(element);
+    return (it != elements.end()) ? it->second : 0;
+}
+\end{lstlisting}
+
+\subsubsection*{Установка кратности}
+
+Метод \texttt{setMultiplicity} устанавливает кратность элемента. Выполняет валидацию: элемент должен принадлежать универсуму, кратность должна быть в допустимых пределах. При нулевой кратности элемент удаляется из мультимножества.
+
+\begin{itemize}
+    \item \textbf{Вход:} элемент (код Грея), кратность ($0 \leq k \leq m$).
+    \item \textbf{Выход:} изменённое мультимножество.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Установка кратности элемента]
+void Multiset::setMultiplicity(const std::string& element, int m) {
+    if (!contains(element)) {
+        throw std::invalid_argument(
+            "Элемент не принадлежит универсуму");
+    }
+
+    if (m < 0 || m > getMaxMultiplicity()) {
+        throw std::invalid_argument(
+            "Кратность должна быть от 0 до максимальной");
+    }
+
+    if (m == 0) {
+        elements.erase(element);
+    } else {
+        elements[element] = m;
+    }
+}
+\end{lstlisting}
+
+\subsubsection*{Объединение}
+
+Метод \texttt{unionWith} вычисляет объединение двух мультимножеств. Для каждого элемента результирующая кратность равна максимуму кратностей в исходных множествах.
+
+\begin{itemize}
+    \item \textbf{Вход:} два мультимножества $A$ и $B$.
+    \item \textbf{Выход:} мультимножество $A \cup B$.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Объединение мультимножеств]
+Multiset Multiset::unionWith(const Multiset& other) const {
+    Multiset result(*this);
+
+    for (const auto& [element, count] : other.elements) {
+        int currentCount = result.getMultiplicity(element);
+        result.elements[element] = std::max(currentCount, count);
+    }
+
+    return result;
+}
+\end{lstlisting}
+
+\subsubsection*{Пересечение}
+
+Метод \texttt{intersectionWith} вычисляет пересечение двух мультимножеств. В результат включаются только элементы, присутствующие в обоих множествах, с минимальной кратностью.
+
+\begin{itemize}
+    \item \textbf{Вход:} два мультимножества $A$ и $B$.
+    \item \textbf{Выход:} мультимножество $A \cap B$.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Пересечение мультимножеств]
+Multiset Multiset::intersectionWith(const Multiset& other) const {
+    Multiset result(*this);
+    result.elements.clear();
+
+    for (const auto& [element, count] : elements) {
+        int otherCount = other.getMultiplicity(element);
+        if (otherCount > 0) {
+            result.elements[element] = std::min(count, otherCount);
+        }
+    }
+
+    return result;
+}
+\end{lstlisting}
+
+\subsubsection*{Разность}
+
+Метод \texttt{differenceWith} вычисляет разность мультимножеств $A \setminus B$ как пересечение $A$ с дополнением $B$.
+
+\begin{itemize}
+    \item \textbf{Вход:} два мультимножества $A$ и $B$.
+    \item \textbf{Выход:} мультимножество $A \setminus B$.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Разность мультимножеств]
+Multiset Multiset::differenceWith(const Multiset& other) const {
+    Multiset result(*this);
+    return result.intersectionWith(other.complement());
+}
+\end{lstlisting}
+
+\subsubsection*{Симметрическая разность}
+
+Метод \texttt{symmetricDifferenceWith} вычисляет симметрическую разность как объединение двух разностей: $(A \setminus B) \cup (B \setminus A)$ (вывод формулы демонстрируется в <<Математическом описании>>).
+
+\begin{itemize}
+    \item \textbf{Вход:} два мультимножества $A$ и $B$.
+    \item \textbf{Выход:} мультимножество $A \triangle B$.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Симметрическая разность]
+Multiset Multiset::symmetricDifferenceWith(const Multiset& other) const {
+    Multiset diff1 = this->differenceWith(other);
+    Multiset diff2 = other.differenceWith(*this);
+    return diff1.unionWith(diff2);
+}
+\end{lstlisting}
+
+\subsubsection*{Дополнение}
+
+Метод \texttt{complement} вычисляет дополнение мультимножества до универсума. Для каждого элемента универсума кратность в дополнении равна разности максимальной кратности и текущей.
+
+\begin{itemize}
+    \item \textbf{Вход:} мультимножество $A$.
+    \item \textbf{Выход:} мультимножество $\overline{A}$.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Дополнение мультимножества]
+Multiset Multiset::complement() const {
+    Multiset result(*this);
+    result.elements.clear();
+
+    for (const auto& element : this->getElements()) {
+        int currentMult = getMultiplicity(element);
+        int complementMult = this->getMaxMultiplicity() - currentMult;
+        result.elements[element] = complementMult;
+    }
+
+    return result;
+}
+\end{lstlisting}
+
+\subsubsection*{Арифметическая сумма}
+
+Метод \texttt{arithmeticSum} вычисляет арифметическую сумму кратностей. Результирующая кратность ограничивается максимальной кратностью универсума.
+
+\begin{itemize}
+    \item \textbf{Вход:} два мультимножества $A$ и $B$.
+    \item \textbf{Выход:} мультимножество $A + B$.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Арифметическая сумма]
+Multiset Multiset::arithmeticSum(const Multiset& other) const {
+    Multiset result(*this);
+
+    for (const auto& [element, count] : other.elements) {
+        int currentCount = result.getMultiplicity(element);
+        int newCount = std::min(
+            currentCount + count, getMaxMultiplicity());
+        result.elements[element] = newCount;
+    }
+
+    return result;
+}
+\end{lstlisting}
+
+\subsubsection*{Арифметическая разность}
+
+Метод \texttt{arithmeticDifference} вычисляет арифметическую разность кратностей.
+
+\begin{itemize}
+    \item \textbf{Вход:} два мультимножества $A$ и $B$.
+    \item \textbf{Выход:} мультимножество $A - B$.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Арифметическая разность]
+Multiset Multiset::arithmeticDifference(const Multiset& other) const {
+    Multiset result(*this);
+    result.elements.clear();
+
+    for (const auto& element : this->getElements()) {
+        int countA = getMultiplicity(element);
+        int countB = other.getMultiplicity(element);
+
+        int diff = std::max(countA - countB, 0);
+        result.elements[element] = diff;
+    }
+
+    return result;
+}
+\end{lstlisting}
+
+\subsubsection*{Арифметическое произведение}
+
+Метод \texttt{arithmeticProduct} вычисляет произведение кратностей. Элемент включается в результат только если присутствует в обоих множествах. Результат ограничивается максимальной кратностью.
+
+\begin{itemize}
+    \item \textbf{Вход:} два мультимножества $A$ и $B$.
+    \item \textbf{Выход:} мультимножество $A \cdot B$.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Арифметическое произведение]
+Multiset Multiset::arithmeticProduct(const Multiset& other) const {
+    Multiset result(*this);
+    result.elements.clear();
+
+    for (const auto& [element, count] : elements) {
+        int otherCount = other.getMultiplicity(element);
+        if (otherCount > 0) {
+            int product = std::min(
+                count * otherCount, getMaxMultiplicity());
+            result.elements[element] = product;
+        }
+    }
+
+    return result;
+}
+\end{lstlisting}
+
+\subsubsection*{Арифметическое деление}
+
+Метод \texttt{arithmeticDivision} вычисляет целочисленное деление кратностей. При нулевой кратности делителя результат равен нулю. Элемент включается в результат только при положительном частном.
+
+\begin{itemize}
+    \item \textbf{Вход:} два мультимножества $A$ и $B$.
+    \item \textbf{Выход:} мультимножество $A \div B$.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Арифметическое деление]
+Multiset Multiset::arithmeticDivision(const Multiset& other) const {
+    Multiset result(*this);
+    result.elements.clear();
+
+    for (const auto& [element, countA] : elements) {
+        int countB = other.getMultiplicity(element);
+
+        if (countB == 0) {
+            continue;
+        }
+
+        int quotient = countA / countB;
+
+        if (quotient > 0) {
+            result.elements[element] = quotient;
+        }
+    }
+
+    return result;
+}
+\end{lstlisting}
+
+\subsubsection*{Операторы сравнения}
+
+Операторы сравнения реализованы через сравнение внутренних контейнеров элементов.
+
+\begin{itemize}
+    \item \textbf{Вход:} два мультимножества $A$ и $B$.
+    \item \textbf{Выход:} истина или ложь.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Операторы сравнения]
+bool Multiset::operator==(const Multiset& other) const {
+    return elements == other.elements;
+}
+
+bool Multiset::operator!=(const Multiset& other) const {
+    return !(*this == other);
+}
+\end{lstlisting}
+
+\subsubsection*{Проверка на пустоту}
+
+Метод \texttt{isEmpty} проверяет, является ли мультимножество пустым (все кратности равны нулю).
+
+\begin{itemize}
+    \item \textbf{Вход:} мультимножество.
+    \item \textbf{Выход:} истина, если мультимножество пусто, иначе ложь.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Проверка на пустоту]
+bool Multiset::isEmpty() const {
+    for (const auto& [element, count] : elements) {
+        if (count > 0) {
+            return false;
+        }
+    }
+    return true;
+}
+\end{lstlisting}
+
+\subsubsection*{Подсчёт ненулевых элементов}
+
+Метод \texttt{countNonZero} подсчитывает количество элементов с положительной кратностью.
+
+\begin{itemize}
+    \item \textbf{Вход:} мультимножество.
+    \item \textbf{Выход:} количество ненулевых элементов.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Подсчёт ненулевых элементов]
+int Multiset::countNonZero() const {
+    int count = 0;
+    for (const auto& [element, mult] : elements) {
+        if (mult > 0) ++count;
+    }
+    return count;
+}
+\end{lstlisting}
+
+\subsubsection*{Вывод мультимножества}
+
+Метод \texttt{printTable} выводит мультимножество в табличном виде. Выбор между компактным и постраничным режимом зависит от разрядности.
+
+\begin{itemize}
+    \item \textbf{Вход:} мультимножество.
+    \item \textbf{Выход:} таблица мультимножества на экране.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Вывод мультимножества]
+void Multiset::printTable() const {
+    if (isEmpty()) {
+        std::cout << "Пустое мультимножество\n";
+        return;
+    }
+
+    if (depth > TABLE_MODE_DEPTH_TOGGLE) {
+        printTablePaged();
+    } else {
+        printTableCompact();
+    }
+}
+\end{lstlisting}
+
+\subsection{Класс CLIUI}
+
+Класс \texttt{CLIUI} реализует консольный интерфейс пользователя. Обеспечивает взаимодействие с пользователем через систему меню.
+
+\subsubsection*{Структура данных}
+
+\begin{lstlisting}[language=C++, caption=Поля класса CLIUI]
+class CLIUI {
+private:
+    std::unique_ptr<Universe> universe;
+    std::map<std::string, std::unique_ptr<Multiset>> multisets;
+    bool showTimings = false;
+};
+\end{lstlisting}
+
+Поле \texttt{universe} хранит умный указатель на универсум. Поле \texttt{multisets} представляет собой словарь мультимножеств, где ключ~--- имя, значение~--- умный указатель на мультимножество. Флаг \texttt{showTimings} управляет отображением времени выполнения операций.
+
+\subsubsection*{Главный цикл программы}
+
+Метод \texttt{run} реализует бесконечный цикл отображения главного меню.
+
+\begin{itemize}
+    \item \textbf{Вход:} запуск программы.
+    \item \textbf{Выход:} завершение программы по команде пользователя.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Главный цикл программы]
+void CLIUI::run() {
+    while (true) {
+        showMainMenu();
+    }
+}
+\end{lstlisting}
+
+\subsubsection*{Главное меню}
+
+Метод \texttt{showMainMenu} отображает главное меню и обрабатывает выбор пользователя. Выполняет валидацию ввода и вызывает соответствующие методы-обработчики.
+
+\begin{itemize}
+    \item \textbf{Вход:} выбор пользователя (номер пункта меню).
+    \item \textbf{Выход:} переход к выбранному действию.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Главное меню]
+void CLIUI::showMainMenu() {
+    clearScreen();
+
+    if (!hasUniverse()) {
+        std::cout << "Универсум не создан!\n\n";
+    }
+
+    printSeparator();
+    std::cout << "Главное меню:\n";
+    printSeparator();
+
+    std::cout << "  [1] Создать универсум\n";
+    std::cout << "  [2] Создать мультимножество\n";
+    std::cout << "  [3] Просмотреть мультимножества\n";
+    std::cout << "  [4] Операции над множествами\n";
+    std::cout << "  [5] Арифметические операции\n";
+    std::cout << "  [6] Сравнить мультимножества\n";
+    std::cout << "  [7] Показать все операции (сводка)\n";
+    std::cout << "  [8] " << (showTimings ? "Скрыть" : "Показать")
+              << " время выполнения операций\n";
+    std::cout << "  [0] Выход\n";
+
+    printSeparator();
+    std::cout << "Ваш выбор: ";
+
+    int choice;
+    if (!(std::cin >> choice)) {
+        std::cin.clear();
+        std::cin.ignore(
+            std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cout << "Ошибка ввода!\n";
+        pause();
+        return;
+    }
+
+    switch (choice) {
+        case 1: createUniverseMenu(); break;
+        case 2: createMultisetMenu(); break;
+        case 3: viewMultisetsMenu(); break;
+        case 4: operationsMenu(); break;
+        case 5: arithmeticOperationsMenu(); break;
+        case 6: compareMultisetsMenu(); break;
+        case 7: showAllOperations(); break;
+        case 8:
+            showTimings = !showTimings;
+            std::cout << "Отображение времени: " 
+                      << (showTimings ? "включено" : "выключено") << "\n";
+            pause();
+            break;
+        case 0:
+            std::cout << "До свидания!\n";
+            exit(0);
+        default:
+            std::cout << "Неверный выбор!\n";
+            pause();
+    }
+}
+\end{lstlisting}
+
+\subsubsection*{Создание универсума}
+
+Метод \texttt{createUniverseMenu} обрабатывает создание универсума. Запрашивает разрядность и максимальную кратность, при наличии существующего универсума предлагает его пересоздать.
+
+\begin{itemize}
+    \item \textbf{Вход:} разрядность, максимальная кратность.
+    \item \textbf{Выход:} созданный универсум.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Создание универсума]
+void CLIUI::createUniverseMenu() {
+    clearScreen();
+    printHeader("СОЗДАНИЕ УНИВЕРСУМА");
+
+    bool isResetUniverse = false;
+
+    if (hasUniverse()) {
+        std::cout << "Универсум уже существует!\n";
+        std::cout << "Создать новый? (y/n): ";
+        char confirm;
+        std::cin >> confirm;
+        if (confirm != 'y' && confirm != 'Y') {
+            return;
+        }
+        isResetUniverse = true;
+    }
+
+    int depth, maxMult;
+
+    std::cout << "Введите разрядность кода Грея: ";
+    if (!(std::cin >> depth) || depth < 0) {
+        std::cout << "Некорректная разрядность!\n";
+        pause();
+        return;
+    }
+
+    if (depth > 0) {
+        std::cout << "Введите максимальную кратность элементов: ";
+        if (!(std::cin >> maxMult) || maxMult < 0) {
+            std::cout << "Некорректная кратность!\n";
+            pause();
+            return;
+        }
+    } else {
+        maxMult = 0;
+    }
+
+    try {
+        if (isResetUniverse) {
+            universe.reset();
+            multisets.clear();
+        }
+
+        measureTimeVoid([&]() {
+            universe = std::make_unique<Universe>(depth, maxMult);
+        });
+
+        universe->printTable();
+        pause();
+    } catch (const std::exception& e) {
+        std::cout << "Ошибка: " << e.what() << "\n";
+        pause();
+    }
+}
+\end{lstlisting}
+
+\subsubsection*{Создание мультимножества}
+
+Метод \texttt{createMultisetMenu} обрабатывает создание мультимножества. Запрашивает имя и способ заполнения (ручной или автоматический).
+
+\begin{itemize}
+    \item \textbf{Вход:} имя мультимножества, способ заполнения, элементы и кратности.
+    \item \textbf{Выход:} созданное мультимножество.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Создание мультимножества]
+void CLIUI::createMultisetMenu() {
+    clearScreen();
+    printHeader("СОЗДАНИЕ МУЛЬТИМНОЖЕСТВА");
+
+    if (!hasUniverse()) {
+        std::cout << "Универсум не создан!\n";
+        pause();
+        return;
+    }
+
+    std::string name = inputMultisetName("Введите имя: ");
+
+    if (hasMultiset(name)) {
+        std::cout << "Мультимножество уже существует!\n";
+        pause();
+        return;
+    }
+
+    auto ms = std::make_unique<Multiset>(*universe);
+
+    if (ms->getDepth() == 0 || ms->getMaxMultiplicity() == 0) {
+        std::cout << "Создано пустое мультимножество\n";
+        multisets[name] = std::move(ms);
+        pause();
+        return;
+    }
+
+    std::cout << "\nВыберите способ заполнения:\n";
+    std::cout << "  [1] Вручную\n";
+    std::cout << "  [2] Автоматически (случайно)\n";
+    std::cout << "Ваш выбор: ";
+
+    int choice;
+    std::cin >> choice;
+
+    try {
+        if (choice == 1) {
+            int size;
+            std::cout << "Количество элементов (1-"
+                      << universe->size() << "): ";
+            std::cin >> size;
+            ms->fillManual(size);
+        } else if (choice == 2) {
+            measureTimeVoid([&]() {
+                ms->fillRandom();
+            });
+        } else {
+            std::cout << "Неверный выбор!\n";
+            pause();
+            return;
+        }
+
+        std::cout << "Мультимножество '" << name << "' создано:\n";
+        ms->printTable();
+        multisets[name] = std::move(ms);
+        pause();
+    } catch (const std::exception& e) {
+        std::cout << "Ошибка: " << e.what() << "\n";
+        pause();
+    }
+}
+\end{lstlisting}
+
+\subsubsection*{Просмотр мультимножеств}
+
+Метод \texttt{viewMultisetsMenu} выводит все созданные мультимножества.
+
+\begin{itemize}
+    \item \textbf{Вход:} список мультимножеств.
+    \item \textbf{Выход:} таблицы всех мультимножеств на экране.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Просмотр мультимножеств]
+void CLIUI::viewMultisetsMenu() {
+    clearScreen();
+    printHeader("ПРОСМОТР МУЛЬТИМНОЖЕСТВ");
+
+    if (multisets.empty()) {
+        std::cout << "Мультимножества не созданы!\n";
+        pause();
+        return;
+    }
+
+    std::cout << "Доступные мультимножества:\n\n";
+
+    for (const auto& [name, ms] : multisets) {
+        std::cout << "-> " << name << ":\n";
+        ms->printTable();
+        std::cout << "\n";
+    }
+
+    pause();
+}
+\end{lstlisting}
+
+\subsubsection*{Меню операций над множествами}
+
+Метод \texttt{operationsMenu} отображает меню операций над мультимножествами. Предлагает пользователю выбрать одну из пяти операций: объединение, пересечение, разность, симметрическую разность или дополнение. При отсутствии мультимножеств выводит сообщение об ошибке.
+
+\begin{itemize}
+    \item \textbf{Вход:} номер операции.
+    \item \textbf{Выход:} переход к выполнению выбранной операции.
+\end{itemize}
+
+\subsubsection*{Меню арифметических операций}
+
+Метод \texttt{arithmeticOperationsMenu} отображает меню арифметических операций над кратностями. Предлагает выбрать сумму, разность, произведение или деление.
+
+\begin{itemize}
+    \item \textbf{Вход:} номер операции.
+    \item \textbf{Выход:} переход к выполнению выбранной операции.
+\end{itemize}
+
+\subsubsection*{Выполнение бинарных операций}
+
+Метод \texttt{performBinaryOperation}~--- универсальный обработчик бинарных операций. Принимает название операции и указатель на метод класса \texttt{Multiset}. Запрашивает два мультимножества, выполняет операцию с замером времени и предлагает сохранить результат.
+
+\begin{itemize}
+    \item \textbf{Вход:} название операции, два мультимножества $A$ и $B$.
+    \item \textbf{Выход:} результат операции, опционально сохранённый под новым именем.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Выполнение бинарных операций]
+void CLIUI::performBinaryOperation(
+    const std::string& opName,
+    Multiset (Multiset::*operation)(const Multiset&) const
+) {
+    if (multisets.size() < 2) {
+        std::cout << "Нужно минимум два мультимножества!\n";
+        pause();
+        return;
+    }
+
+    std::cout << "\nДоступные мультимножества: ";
+    for (const auto& [name, _] : multisets) {
+        std::cout << name << " ";
+    }
+    std::cout << "\n";
+
+    std::string nameA = inputMultisetName("Первое (A): ");
+    std::string nameB = inputMultisetName("Второе (B): ");
+
+    Multiset* A = getMultiset(nameA);
+    Multiset* B = getMultiset(nameB);
+
+    if (!A || !B) {
+        std::cout << "Мультимножество не найдено!\n";
+        pause();
+        return;
+    }
+
+    std::cout << "\n" << opName << ":\n\n";
+    std::cout << "A = \n";
+    A->printTable();
+    std::cout << "\nB = \n";
+    B->printTable();
+
+    Multiset result = measureTime([&]() {
+        return (A->*operation)(*B);
+    });
+
+    std::cout << "\nРезультат:\n";
+    result.printTable();
+
+    std::cout << "\nСохранить результат? (y/n): ";
+    char save;
+    std::cin >> save;
+
+    if (save == 'y' || save == 'Y') {
+        std::string resultName = inputMultisetName("Имя: ");
+        multisets[resultName] = std::make_unique<Multiset>(result);
+        std::cout << "Сохранено как '" << resultName << "'\n";
+    }
+
+    pause();
+}
+\end{lstlisting}
+
+\subsubsection*{Выполнение унарных операций}
+
+Метод \texttt{performUnaryOperation}~--- обработчик унарных операций (дополнение). Аналогичен бинарному, но работает с одним мультимножеством.
+
+\begin{itemize}
+    \item \textbf{Вход:} название операции, мультимножество $A$.
+    \item \textbf{Выход:} результат операции, опционально сохранённый под новым именем.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Выполнение унарных операций]
+void CLIUI::performUnaryOperation(
+    const std::string& opName,
+    Multiset (Multiset::*operation)() const
+) {
+    std::cout << "\nДоступные мультимножества: ";
+    for (const auto& [name, _] : multisets) {
+        std::cout << name << " ";
+    }
+    std::cout << "\n";
+
+    std::string nameA = inputMultisetName("Мультимножество: ");
+    Multiset* A = getMultiset(nameA);
+
+    if (!A) {
+        std::cout << "Мультимножество не найдено!\n";
+        pause();
+        return;
+    }
+
+    std::cout << "\n" << opName << ":\n\n";
+    std::cout << "A = ";
+    A->printTable();
+
+    Multiset result = measureTime([&]() {
+        return (A->*operation)();
+    });
+
+    std::cout << "\nРезультат:\n";
+    result.printTable();
+
+    std::cout << "\nСохранить результат? (y/n): ";
+    char save;
+    std::cin >> save;
+
+    if (save == 'y' || save == 'Y') {
+        std::string resultName = inputMultisetName("Имя: ");
+        multisets[resultName] = std::make_unique<Multiset>(result);
+        std::cout << "Сохранено как '" << resultName << "'\n";
+    }
+
+    pause();
+}
+\end{lstlisting}
+
+\subsubsection*{Сравнение мультимножеств}
+
+Метод \texttt{compareMultisetsMenu} сравнивает два мультимножества на равенство.
+
+\begin{itemize}
+    \item \textbf{Вход:} имена двух мультимножеств.
+    \item \textbf{Выход:} результат сравнения на экране.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Сравнение мультимножеств]
+void CLIUI::compareMultisetsMenu() {
+    clearScreen();
+    printHeader("СРАВНЕНИЕ МУЛЬТИМНОЖЕСТВ");
+
+    if (multisets.size() < 2) {
+        std::cout << "Нужно минимум два мультимножества!\n";
+        pause();
+        return;
+    }
+
+    std::cout << "Доступные мультимножества: ";
+    for (const auto& [name, _] : multisets) {
+        std::cout << name << " ";
+    }
+    std::cout << "\n";
+
+    std::string nameA = inputMultisetName("Первое: ");
+    std::string nameB = inputMultisetName("Второе: ");
+
+    Multiset* A = getMultiset(nameA);
+    Multiset* B = getMultiset(nameB);
+
+    if (!A || !B) {
+        std::cout << "Мультимножество не найдено!\n";
+        pause();
+        return;
+    }
+
+    A->printTable();
+    B->printTable();
+
+    std::cout << "\nРезультат сравнения:\n";
+    if (*A == *B) {
+        std::cout << "Мультимножества равны (A == B)\n";
+    } else {
+        std::cout << "Мультимножества не равны (A != B)\n";
+    }
+
+    pause();
+}
+\end{lstlisting}
+
+\subsubsection*{Измерение времени выполнения}
+
+Шаблонный метод \texttt{measureTime} измеряет время выполнения переданной функции. Использует высокоточный таймер. Фиксирует время до и после выполнения, вычисляет разницу в микросекундах и преобразует в миллисекунды.
+
+\begin{itemize}
+    \item \textbf{Вход:} функция для выполнения.
+    \item \textbf{Выход:} результат функции, время выполнения на экране.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Измерение времени с возвратом результата]
+template<typename Func>
+auto CLIUI::measureTime(Func func) -> decltype(func()) {
+    auto start = std::chrono::high_resolution_clock::now();
+    auto result = func();
+    auto end = std::chrono::high_resolution_clock::now();
+
+    auto duration = std::chrono::duration_cast
+        std::chrono::microseconds>(end - start);
+    double milliseconds = duration.count() / 1000.0;
+
+    printSlowWarning(milliseconds);
+
+    if (showTimings) {
+        printExecutionTime(milliseconds);
+    }
+
+    return result;
+}
+\end{lstlisting}
+
+\subsubsection*{Измерение времени без возврата}
+
+Метод \texttt{measureTimeVoid}~--- вариант для функций без возвращаемого значения. Используется для операций создания универсума и случайного заполнения мультимножеств.
+
+\begin{itemize}
+    \item \textbf{Вход:} функция для выполнения.
+    \item \textbf{Выход:} время выполнения на экране.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Измерение времени без возврата]
+template<typename Func>
+void CLIUI::measureTimeVoid(Func func) {
+    auto start = std::chrono::high_resolution_clock::now();
+    func();
+    auto end = std::chrono::high_resolution_clock::now();
+
+    auto duration = std::chrono::duration_cast
+        std::chrono::microseconds>(end - start);
+    double milliseconds = duration.count() / 1000.0;
+
+    printSlowWarning(milliseconds);
+
+    if (showTimings) {
+        printExecutionTime(milliseconds);
+    }
+}
+\end{lstlisting}
+
+\subsubsection*{Вывод времени выполнения}
+
+Метод \texttt{printExecutionTime} форматирует и выводит время выполнения. Автоматически выбирает единицы измерения: микросекунды для очень быстрых операций, миллисекунды для средних, секунды для долгих.
+
+\begin{itemize}
+    \item \textbf{Вход:} время в миллисекундах.
+    \item \textbf{Выход:} отформатированное время на экране.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Вывод времени выполнения]
+void CLIUI::printExecutionTime(double milliseconds) {
+    std::cout << "\n  Время выполнения: ";
+
+    if (milliseconds < 1.0) {
+        std::cout << (milliseconds * 1000.0) << " мкс";
+    } else if (milliseconds < 1000.0) {
+        std::cout << std::fixed << std::setprecision(3) 
+                  << milliseconds << " мс";
+    } else {
+        std::cout << std::fixed << std::setprecision(3) 
+                  << (milliseconds / 1000.0) << " с";
+    }
+
+    std::cout << "\n";
+}
+\end{lstlisting}
+
+\subsubsection*{Предупреждение о долгих операциях}
+
+Метод \texttt{printSlowWarning} выводит предупреждение, если операция заняла более одной секунды.
+
+\begin{itemize}
+    \item \textbf{Вход:} время в миллисекундах.
+    \item \textbf{Выход:} предупреждение на экране (если время $\geq 1000$ мс).
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Предупреждение о долгих операциях]
+void CLIUI::printSlowWarning(double milliseconds) {
+    if (milliseconds >= 1000.0) {
+        std::cout << "\n  ПРЕДУПРЕЖДЕНИЕ: операция заняла более 1 секунды ("
+                  << std::fixed << std::setprecision(2) 
+                  << (milliseconds / 1000.0) << " с)\n";
+    }
+}
+\end{lstlisting}
+
+\subsubsection*{Вспомогательные методы интерфейса}
+
+Метод \texttt{clearScreen} очищает экран терминала системным вызовом.
+
+\begin{itemize}
+    \item \textbf{Вход:} текущее состояние терминала.
+    \item \textbf{Выход:} очищенный экран.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Очистка экрана]
+void CLIUI::clearScreen() {
+    system("clear");
+}
+\end{lstlisting}
+
+Метод \texttt{pause} ожидает нажатия Enter для продолжения работы.
+
+\begin{itemize}
+    \item \textbf{Вход:} нажатие клавиши Enter.
+    \item \textbf{Выход:} продолжение работы программы.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Пауза]
+void CLIUI::pause() {
+    std::cout << "\nНажмите Enter для продолжения...";
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    std::cin.get();
+}
+\end{lstlisting}
+
+Метод \texttt{inputMultisetName} запрашивает и возвращает имя мультимножества.
+
+\begin{itemize}
+    \item \textbf{Вход:} строка приглашения.
+    \item \textbf{Выход:} введённое имя.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Ввод имени мультимножества]
+std::string CLIUI::inputMultisetName(const std::string& prompt) {
+    std::string name;
+    std::cout << prompt;
+    std::cin >> name;
+    return name;
+}
+\end{lstlisting}
+
+Метод \texttt{getMultiset} возвращает мультимножество по имени.
+
+\begin{itemize}
+    \item \textbf{Вход:} имя мультимножества.
+    \item \textbf{Выход:} мультимножество или ничего, если не найдено.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Получение мультимножества по имени]
+Multiset* CLIUI::getMultiset(const std::string& name) {
+    auto it = multisets.find(name);
+    if (it == multisets.end()) {
+        return nullptr;
+    }
+    return it->second.get();
+}
+\end{lstlisting}
+
+Методы проверки существования универсума и мультимножества:
+
+\begin{itemize}
+    \item \texttt{hasUniverse()}~--- \textbf{Вход:} текущее состояние программы. \textbf{Выход:} истина или ложь.
+    \item \texttt{hasMultiset(name)}~--- \textbf{Вход:} имя мультимножества. \textbf{Выход:} истина или ложь.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption=Проверки существования]
+bool CLIUI::hasUniverse() const {
+    return universe != nullptr;
+}
+
+bool CLIUI::hasMultiset(const std::string& name) const {
+    return multisets.find(name) != multisets.end();
+}
+\end{lstlisting}
