@@ -20,6 +20,7 @@ Matrix Matrix::m_multiply(const Matrix& other,
                            double identity) const {
     Matrix result(m_rows, other.m_cols, identity);
 
+    // в не Шимбелловой матрице identity - нейтральный элемент по сложению (ноль)
     for (int i = 0; i < m_rows; ++i) {
         for (int j = 0; j < other.m_cols; ++j) {
             for (int k = 0; k < m_cols; ++k) {
