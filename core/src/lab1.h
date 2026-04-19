@@ -14,8 +14,9 @@ enum class WeightMode {
 class GeneratorGraph : public Graph {
 public:
     GeneratorGraph(int vertexCount,
-                   double weibullA = constants::WEIBULL_SCALE,
-                   double weibullC = constants::WEIBULL_SHAPE);
+                   double weibullA  = constants::WEIBULL_SCALE,
+                   double weibullC  = constants::WEIBULL_SHAPE,
+                   double weibullY0 = constants::WEIBULL_SHIFT);
 
     void generate();
 
@@ -33,13 +34,18 @@ public:
 
 private:
     std::mt19937 m_rng;
-    std::weibull_distribution<double> m_weibullDist;
+    std::uniform_real_distribution<double> m_uniformDist;
+
+    double m_weibullA;
+    double m_weibullC;
+    double m_weibullY0;
 
     std::vector<double> m_eccentricities;
     std::vector<int> m_centerVertices;
     std::vector<int> m_diametralVertices;
     int m_diameter = 0;
 
+    double m_sampleWeibull();
     std::vector<int> m_generateDegreeSequence();
     void m_ensureConnected();
 };

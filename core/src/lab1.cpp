@@ -4,16 +4,33 @@
 #include <limits>
 #include <cmath>
 
-GeneratorGraph::GeneratorGraph(int vertexCount, double weibullA, double weibullC) : Graph(vertexCount),
-    m_rng(std::random_device{}()),
-    m_weibullDist(weibullC, weibullA),
-    m_diameter(0)
+GeneratorGraph::GeneratorGraph(int vertexCount,
+                               double weibullA,
+                               double weibullC,
+                               double weibullY0)
+    : Graph(vertexCount),
+      m_rng(std::random_device{}()),
+      m_uniformDist(0, 1),
+      m_weibullA(weibullA),
+      m_weibullC(weibullC),
+      m_weibullY0(weibullY0),
+      m_diameter(0)
 {}
+
+double GeneratorGraph::m_sampleWeibull() {
+    double u;
+    // защита от log(0): u = 1 даёт ln(0)
+    do {
+        u = m_uniformDist(m_rng);
+    } while (u >= 1);
+
+    return m_weibullY0 + m_weibullA * std::pow(-std::log(1 - u), 1 / m_weibullC);
+}
 
 std::vector<int> GeneratorGraph::m_generateDegreeSequence() {
     std::vector<int> degrees(m_vertexCount);
     for (int i = 0; i < m_vertexCount; ++i) {
-        degrees[i] = std::max(1, static_cast<int>(std::round(m_weibullDist(m_rng))));
+        degrees[i] = std::max(1, static_cast<int>(std::round(m_sampleWeibull())));
         degrees[i] = std::min(degrees[i], m_vertexCount - 1);
     }
     return degrees;
@@ -38,7 +55,7 @@ void GeneratorGraph::m_ensureConnected() {
     }
 
     // добавляем рёбра к недостижимым вершинам
-    // i-1 → i сохраняет ацикличность (i-1 < i)
+    // i-1 -> i сохраняет ацикличность (i-1 < i)
     for (int i = 1; i < m_vertexCount; ++i) {
         if (!visited[i]) {
             m_adjacencyMatrix(i - 1, i) = 1;
@@ -52,7 +69,10 @@ void GeneratorGraph::generate() {
 
     auto degrees = m_generateDegreeSequence();
 
-    // рёбра только от i к j, где i < j → ацикличность гарантирована
+    // рёбра только от i к j, где i < j
+    //
+    // любое ребро идёт от меньшего индекса к большему. Значит, любой путь v_0 -> v_1 -> v_2
+    // -> ... обязан иметь строго возрастающую последовательность индексов, поэтому цикла быть не может
     for (int i = 0; i < m_vertexCount; ++i) {
         std::vector<int> candidates;
         for (int j = i + 1; j < m_vertexCount; ++j) {
@@ -142,28 +162,29 @@ std::vector<int> GeneratorGraph::getDiametralVertices() const { return m_diametr
 int GeneratorGraph::getDiameter() const { return m_diameter; }
 
 // ============================================================
-// п.3 — весовая матрица + Шимбелл
+// п.3 — весовая матрица (веса по тому же распределению Вейбулла) + Шимбелл
 // ============================================================
 
 void GeneratorGraph::generateWeightMatrix(WeightMode mode) {
     m_weightMatrix = Matrix(m_vertexCount, m_vertexCount);
 
-    std::uniform_real_distribution<double> posDist(1.0, 100.0);
-    std::uniform_real_distribution<double> negDist(-100.0, -1.0);
-    std::uniform_real_distribution<double> mixDist(-100.0, 100.0);
+    // знак для Mixed-режима: 50/50
+    std::uniform_int_distribution<int> signDist(0, 1);
 
     for (int i = 0; i < m_vertexCount; ++i) {
         for (int j = 0; j < m_vertexCount; ++j) {
             if (m_adjacencyMatrix(i, j) != 0) {
+                double w = m_sampleWeibull();  // Вейбулл всегда >= y0, обычно > 0
+
                 switch (mode) {
                     case WeightMode::Positive:
-                        m_weightMatrix(i, j) = posDist(m_rng);
+                        m_weightMatrix(i, j) = w;
                         break;
                     case WeightMode::Negative:
-                        m_weightMatrix(i, j) = negDist(m_rng);
+                        m_weightMatrix(i, j) = -w;
                         break;
                     case WeightMode::Mixed:
-                        m_weightMatrix(i, j) = mixDist(m_rng);
+                        m_weightMatrix(i, j) = signDist(m_rng) ? w : -w;
                         break;
                 }
             }
