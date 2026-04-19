@@ -19,11 +19,11 @@ const Matrix& Graph::getWeightMatrix() const {
 }
 
 void Graph::printAdjacencyMatrix() const {
-    std::cout << "Adjacency matrix:\n";
+    std::cout << "Матрица смежности:\n";
     m_adjacencyMatrix.print();
 }
 
 void Graph::printWeightMatrix() const {
-    std::cout << "Weight matrix:\n";
+    std::cout << "Матрица весов:\n";
     m_weightMatrix.print();
 }

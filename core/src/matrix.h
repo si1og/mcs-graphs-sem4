@@ -19,7 +19,8 @@ public:
     Matrix shimbellMin(const Matrix& other) const;
     Matrix shimbellMax(const Matrix& other) const;
 
-    void print() const;
+    enum class PrintMode { Integer, Double };
+    void print(PrintMode mode = PrintMode::Integer) const;
 
 private:
     using m_BinaryOp = double(*)(double, double);

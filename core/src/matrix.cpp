@@ -60,14 +60,29 @@ Matrix Matrix::shimbellMax(const Matrix& other) const {
         -std::numeric_limits<double>::infinity());
 }
 
-void Matrix::print() const {
+void Matrix::print(PrintMode mode) const {
+    const int cellWidth = (mode == PrintMode::Double) ? 9 : 4;
+    const int labelWidth = 3;
+
+    std::cout << std::setw(labelWidth) << "" << " |";
+    for (int j = 0; j < m_cols; ++j) {
+        std::cout << std::setw(cellWidth) << std::defaultfloat << j;
+    }
+    std::cout << "\n";
+
+    std::cout << std::string(labelWidth + 1, '-') << "+"
+              << std::string(cellWidth * m_cols, '-') << "\n";
+
     for (int i = 0; i < m_rows; ++i) {
+        std::cout << std::setw(labelWidth) << std::defaultfloat << i << " |";
         for (int j = 0; j < m_cols; ++j) {
             double val = m_data[i][j];
             if (std::isinf(val)) {
-                std::cout << std::setw(8) << "inf";
+                std::cout << std::setw(cellWidth) << "inf";
+            } else if (mode == PrintMode::Double) {
+                std::cout << std::setw(cellWidth) << std::fixed << std::setprecision(1) << val;
             } else {
-                std::cout << std::setw(8) << std::fixed << std::setprecision(1) << val;
+                std::cout << std::setw(cellWidth) << std::defaultfloat << static_cast<int>(val);
             }
         }
         std::cout << "\n";

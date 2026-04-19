@@ -55,10 +55,6 @@ void printVector(const std::vector<double>& v) {
     std::cout << "]\n";
 }
 
-// ============================================================
-// пункты меню
-// ============================================================
-
 void menuGenerate(GeneratorGraph& graph) {
     printHeader("п.1. Генерация графа");
     graph.generate();
@@ -141,10 +137,6 @@ void menuPrintMatrices(const GeneratorGraph& graph) {
     graph.printWeightMatrix();
 }
 
-// ============================================================
-// главное меню
-// ============================================================
-
 void printMenu() {
     std::cout << "\n----- Меню -----\n"
               << "1. Сгенерировать граф\n"
@@ -156,7 +148,7 @@ void printMenu() {
               << "0. Выход\n";
 }
 
-} // namespace
+}
 
 int main() {
     std::cout << "=== Лабораторная работа №1 ===\n"
@@ -165,12 +157,7 @@ int main() {
 
     int n = readInt("Количество вершин [2, 100]: ", 2, 100);
 
-    std::cout << "\nПараметры распределения Вейбулла-Гнеденко:\n";
-    double a  = readDouble("  параметр масштаба a  (a > 0): ");
-    double c  = readDouble("  параметр формы    c  (c > 0): ");
-    double y0 = readDouble("  параметр сдвига   y0        : ");
-
-    GeneratorGraph graph(n, a, c, y0);
+    GeneratorGraph graph(n, constants::WEIBULL_SCALE, constants::WEIBULL_SHAPE, constants::WEIBULL_SHIFT);
 
     // сразу генерируем граф, чтобы остальные пункты были доступны
     graph.generate();
