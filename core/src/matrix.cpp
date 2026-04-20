@@ -61,7 +61,7 @@ Matrix Matrix::shimbellMax(const Matrix& other) const {
 }
 
 void Matrix::print(PrintMode mode) const {
-    const int cellWidth = (mode == PrintMode::Double) ? 9 : 4;
+    const int cellWidth = (mode == PrintMode::Double) ? 9 : 5;
     const int labelWidth = 3;
 
     std::cout << std::setw(labelWidth) << "" << " |";
@@ -78,7 +78,7 @@ void Matrix::print(PrintMode mode) const {
         for (int j = 0; j < m_cols; ++j) {
             double val = m_data[i][j];
             if (std::isinf(val)) {
-                std::cout << std::setw(cellWidth) << "inf";
+                std::cout << std::setw(cellWidth) << (val > 0 ? "+inf" : "-inf");;
             } else if (mode == PrintMode::Double) {
                 std::cout << std::setw(cellWidth) << std::fixed << std::setprecision(1) << val;
             } else {

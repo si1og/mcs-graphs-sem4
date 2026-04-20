@@ -145,7 +145,8 @@ void GeneratorGraph::generateWeightMatrix(WeightMode mode) {
     for (int i = 0; i < m_vertexCount; ++i) {
         for (int j = 0; j < m_vertexCount; ++j) {
             if (m_adjacencyMatrix(i, j) != 0) {
-                double w = m_sampleWeibull();
+                double w = std::round(m_sampleWeibull());
+                if (w < 1) w = 1;
 
                 switch (mode) {
                     case WeightMode::Positive:
@@ -164,11 +165,23 @@ void GeneratorGraph::generateWeightMatrix(WeightMode mode) {
 }
 
 Matrix GeneratorGraph::shimbell(int steps, bool findMin) const {
-    Matrix result = m_weightMatrix;
+    const double NO_EDGE = findMin
+        ? std::numeric_limits<double>::infinity()
+        : -std::numeric_limits<double>::infinity();
+
+    Matrix W(m_vertexCount, m_vertexCount, NO_EDGE);
+
+    for (int i = 0; i < m_vertexCount; ++i) {
+        for (int j = 0; j < m_vertexCount; ++j) {
+            if (m_adjacencyMatrix(i, j) != 0) {
+                W(i, j) = m_weightMatrix(i, j);
+            }
+        }
+    }
+
+    Matrix result = W;
     for (int s = 1; s < steps; ++s) {
-        result = findMin
-            ? result.shimbellMin(m_weightMatrix)
-            : result.shimbellMax(m_weightMatrix);
+        result = findMin ? result.shimbellMin(W) : result.shimbellMax(W);
     }
     return result;
 }

@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include <limits>
+enum class PrintMode { Integer, Double };
 
 class Matrix {
 public:
@@ -19,7 +20,6 @@ public:
     Matrix shimbellMin(const Matrix& other) const;
     Matrix shimbellMax(const Matrix& other) const;
 
-    enum class PrintMode { Integer, Double };
     void print(PrintMode mode = PrintMode::Integer) const;
 
 private:
