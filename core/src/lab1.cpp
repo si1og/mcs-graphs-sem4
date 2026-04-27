@@ -1,8 +1,10 @@
 #include "lab1.h"
 #include <algorithm>
-#include <queue>
+// #include <queue>
+#include <iostream>
 #include <limits>
 #include <cmath>
+#include <vector>
 
 GeneratorGraph::GeneratorGraph(int vertexCount,
                                double weibullA,
@@ -18,77 +20,83 @@ GeneratorGraph::GeneratorGraph(int vertexCount,
 {}
 
 double GeneratorGraph::m_sampleWeibull() {
-    double u;
-    do {
-        u = m_uniformDist(m_rng);
-    } while (u >= 1);
+double r;
+do {
+    r = m_uniformDist(m_rng);
+} while (r >= 1);
 
-    return m_weibullY0 + m_weibullA * std::pow(-std::log(1 - u), 1 / m_weibullC);
+return m_weibullY0 + m_weibullA * std::pow(-std::log(1 - r), 1 / m_weibullC);
 }
 
 std::vector<int> GeneratorGraph::m_generateDegreeSequence() {
     std::vector<int> degrees(m_vertexCount);
-    for (int i = 0; i < m_vertexCount; ++i) {
-        degrees[i] = std::max(1, static_cast<int>(std::round(m_sampleWeibull())));
-        degrees[i] = std::min(degrees[i], m_vertexCount - 1);
-    }
+
+    bool valid;
+    do {
+        valid = true;
+        for (int i = 0; i < m_vertexCount; ++i) {
+            double raw = m_sampleWeibull();
+            degrees[i] = static_cast<int>(std::round(raw * (m_vertexCount - 1)));
+
+            if (degrees[i] > m_vertexCount - 1 || degrees[i] == 0) {
+                valid = false;
+                break;
+            }
+        }
+    } while (!valid);
+
     return degrees;
 }
 
-void GeneratorGraph::m_ensureConnected() {
-    Matrix A(m_vertexCount, m_vertexCount);
-    for (int i = 0; i < m_vertexCount; ++i) {
+void GeneratorGraph::testDistribution() {
+    std::vector<double> rawValues(m_vertexCount);
+    std::vector<int> degrees(m_vertexCount);
+
+    for (int i = 0; i < 30; ++i) {
+        std::cout << "Генерация №" << i << ":\n";
         for (int j = 0; j < m_vertexCount; ++j) {
-            if (m_adjacencyMatrix(i, j) != 0 || m_adjacencyMatrix(j, i) != 0) {
-                A(i, j) = 1;
-            }
+            rawValues[j] = m_sampleWeibull();
+            degrees[j] = rawValues[j] * m_vertexCount;
         }
-    }
 
-    std::vector<bool> reachable(m_vertexCount, false);
-    reachable[0] = true;
-
-    Matrix Ak = A;
-    for (int k = 1; k < m_vertexCount; ++k) {
-        for (int j = 0; j < m_vertexCount; ++j) {
-            if (Ak(0, j) > 0) reachable[j] = true;
-        }
-        if (k < m_vertexCount - 1) Ak = Ak * A;
-    }
-
-    for (int i = 1; i < m_vertexCount; ++i) {
-        if (!reachable[i]) {
-            m_adjacencyMatrix(i - 1, i) = 1;
-            reachable[i] = true;
-        }
+        std::cout << "raw: ";
+        for (auto e : rawValues) std::cout << e << " ";
+        std::cout << "\n";
+        std::cout << "degrees: ";
+        for (auto e : degrees) std::cout << e << " ";
+        std::cout << "\n";
     }
 }
 
 void GeneratorGraph::generate() {
     m_adjacencyMatrix = Matrix(m_vertexCount, m_vertexCount);
-
     auto degrees = m_generateDegreeSequence();
 
-    // рёбра только от i к j, где i < j
-    //
-    // любое ребро идёт от меньшего индекса к большему. Значит, любой путь v_0 -> v_1 -> v_2
-    // -> ... обязан иметь строго возрастающую последовательность индексов, поэтому цикла быть не может
+    // гарантирует связность
+    for (int i = 0; i < m_vertexCount - 1; ++i) {
+        m_adjacencyMatrix(i, i + 1) = 1;
+    }
+
+    // добор оставшихся рёбер
     for (int i = 0; i < m_vertexCount; ++i) {
+        int alreadyAdded = (i < m_vertexCount - 1) ? 1 : 0;
+
         std::vector<int> candidates;
         for (int j = i + 1; j < m_vertexCount; ++j) {
-            candidates.push_back(j);
+            if (m_adjacencyMatrix(i, j) == 0) {  // ещё не добавлено
+                candidates.push_back(j);
+            }
         }
         std::shuffle(candidates.begin(), candidates.end(), m_rng);
 
+        int needToAdd = std::max(0, degrees[i] - alreadyAdded);
         int edgesAdded = 0;
         for (int j : candidates) {
-            if (edgesAdded >= degrees[i]) break;
+            if (edgesAdded >= needToAdd) break;
             m_adjacencyMatrix(i, j) = 1;
             ++edgesAdded;
         }
     }
-
-    m_ensureConnected();
 }
 
 void GeneratorGraph::computeEccentricities() {
@@ -146,7 +154,6 @@ void GeneratorGraph::generateWeightMatrix(WeightMode mode) {
         for (int j = 0; j < m_vertexCount; ++j) {
             if (m_adjacencyMatrix(i, j) != 0) {
                 double w = std::round(m_sampleWeibull());
-                if (w < 1) w = 1;
 
                 switch (mode) {
                     case WeightMode::Positive:
@@ -162,6 +169,8 @@ void GeneratorGraph::generateWeightMatrix(WeightMode mode) {
             }
         }
     }
+
+    isMatrixInit.weight = true;
 }
 
 Matrix GeneratorGraph::shimbell(int steps, bool findMin) const {
@@ -187,37 +196,24 @@ Matrix GeneratorGraph::shimbell(int steps, bool findMin) const {
 }
 
 bool GeneratorGraph::hasRoute(int from, int to) const {
-    std::vector<bool> visited(m_vertexCount, false);
-    std::queue<int> q;
-    q.push(from);
-    visited[from] = true;
+    if (from == to) return true;
 
-    while (!q.empty()) {
-        int v = q.front(); q.pop();
-        if (v == to) return true;
-        for (int u = 0; u < m_vertexCount; ++u) {
-            if (!visited[u] && m_adjacencyMatrix(v, u) != 0) {
-                visited[u] = true;
-                q.push(u);
-            }
-        }
+    Matrix Ak = m_adjacencyMatrix;
+    for (int k = 1; k < m_vertexCount; ++k) {
+        if (Ak(from, to) > 0) return true;
+        if (k < m_vertexCount - 1) Ak = Ak * m_adjacencyMatrix;
     }
-
     return false;
 }
 
 int GeneratorGraph::countRoutes(int from, int to) const {
-    std::vector<int> dp(m_vertexCount, 0);
-    dp[from] = 1;
+    if (from == to) return 1;
 
-    for (int v = from; v < m_vertexCount; ++v) {
-        if (dp[v] == 0) continue;
-        for (int u = v + 1; u < m_vertexCount; ++u) {
-            if (m_adjacencyMatrix(v, u) != 0) {
-                dp[u] += dp[v];
-            }
-        }
+    int total = 0;
+    Matrix Ak = m_adjacencyMatrix;
+    for (int k = 1; k < m_vertexCount; ++k) {
+        total += static_cast<int>(Ak(from, to));
+        if (k < m_vertexCount - 1) Ak = Ak * m_adjacencyMatrix;
     }
-
-    return dp[to];
+    return total;
 }

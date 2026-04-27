@@ -27,3 +27,13 @@ void Graph::printWeightMatrix() const {
     std::cout << "Матрица весов:\n";
     m_weightMatrix.print();
 }
+
+void Graph::m_resetAdjacencyMatrix() {
+    m_adjacencyMatrix = Matrix(m_vertexCount, m_vertexCount);
+    isMatrixInit.adjacency = false;
+}
+
+void Graph::m_resetWeightMatrix() {
+    m_weightMatrix = Matrix(m_vertexCount, m_vertexCount);
+    isMatrixInit.weight = false;
+}

@@ -55,19 +55,28 @@ void printVector(const std::vector<double>& v) {
     std::cout << "]\n";
 }
 
+void printVectorDoubleToInt(const std::vector<double>& v) {
+    std::cout << "[";
+    for (size_t i = 0; i < v.size(); ++i) {
+        std::cout << std::fixed << std::setprecision(1) << static_cast<int>(v[i]);
+        if (i + 1 < v.size()) std::cout << ", ";
+    }
+    std::cout << "]\n";
+}
+
 void menuGenerate(GeneratorGraph& graph) {
-    printHeader("п.1. Генерация графа");
+    printHeader("Генерация графа");
     graph.generate();
     std::cout << "Граф сгенерирован.\n";
     graph.printAdjacencyMatrix();
 }
 
 void menuEccentricities(GeneratorGraph& graph) {
-    printHeader("п.2. Эксцентриситеты, центр, диаметр");
+    printHeader("Эксцентриситеты, центр, диаметр");
     graph.computeEccentricities();
 
     std::cout << "Эксцентриситеты вершин: ";
-    printVector(graph.getEccentricities());
+    printVectorDoubleToInt(graph.getEccentricities());
 
     std::cout << "Диаметр графа: " << graph.getDiameter() << "\n";
 
@@ -79,7 +88,7 @@ void menuEccentricities(GeneratorGraph& graph) {
 }
 
 void menuWeights(GeneratorGraph& graph) {
-    printHeader("п.3. Весовая матрица");
+    printHeader("Весовая матрица");
     std::cout << "Режим весов:\n"
               << "  1 — положительные\n"
               << "  2 — отрицательные\n"
@@ -99,7 +108,12 @@ void menuWeights(GeneratorGraph& graph) {
 }
 
 void menuShimbell(const GeneratorGraph& graph) {
-    printHeader("п.3. Алгоритм Шимбелла");
+    printHeader("Алгоритм Шимбелла");
+    if (!graph.isMatrixInit.weight) {
+        std::cout << "Весовая матрица не инициализирована.\n";
+        return;
+    }
+
     int n = graph.getVertexCount();
     int steps = readInt("Количество рёбер в пути [1, " + std::to_string(n - 1) + "]: ",
                         1, n - 1);
@@ -113,7 +127,7 @@ void menuShimbell(const GeneratorGraph& graph) {
 }
 
 void menuRoutes(const GeneratorGraph& graph) {
-    printHeader("п.4. Маршруты между вершинами");
+    printHeader("Маршруты между вершинами");
     int n = graph.getVertexCount();
     int from = readInt("Начальная вершина [0, " + std::to_string(n - 1) + "]: ",
                        0, n - 1);
@@ -145,28 +159,26 @@ void printMenu() {
               << "4. Алгоритм Шимбелла\n"
               << "5. Маршруты между вершинами\n"
               << "6. Показать текущие матрицы\n"
+              << "7. Тест распределения степеней\n"
               << "0. Выход\n";
 }
 
 }
 
 int main() {
-    std::cout << "=== Лабораторная работа №1 ===\n"
-              << "Генерация ориентированного ациклического графа\n"
-              << "(смещённое распределение Вейбулла-Гнеденко)\n\n";
+    std::cout << "=== Лабораторная работа №1 ===\n";
 
-    int n = readInt("Количество вершин [2, 100]: ", 2, 100);
+    int n = readInt("Количество вершин (>=2): ", 2, 100);
 
     GeneratorGraph graph(n, constants::WEIBULL_SCALE, constants::WEIBULL_SHAPE, constants::WEIBULL_SHIFT);
 
-    // сразу генерируем граф, чтобы остальные пункты были доступны
     graph.generate();
     std::cout << "\nГраф сгенерирован автоматически.\n";
     graph.printAdjacencyMatrix();
 
     while (true) {
         printMenu();
-        int choice = readInt("> ", 0, 6);
+        int choice = readInt("> ", 0, 7);
         if (choice == 0) break;
 
         switch (choice) {
@@ -176,6 +188,7 @@ int main() {
             case 4: menuShimbell(graph);        break;
             case 5: menuRoutes(graph);          break;
             case 6: menuPrintMatrices(graph);   break;
+            case 7: graph.testDistribution();   break;
         }
     }
 

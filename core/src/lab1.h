@@ -31,6 +31,7 @@ public:
 
     bool hasRoute(int from, int to) const;
     int countRoutes(int from, int to) const;
+    void testDistribution();
 
 private:
     std::mt19937 m_rng;
@@ -47,5 +48,4 @@ private:
 
     double m_sampleWeibull();
     std::vector<int> m_generateDegreeSequence();
-    void m_ensureConnected();
 };
