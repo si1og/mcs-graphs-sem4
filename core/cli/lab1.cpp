@@ -38,30 +38,27 @@ double readDouble(const std::string& prompt) {
 }
 
 void printVector(const std::vector<int>& v) {
-    std::cout << "[";
     for (size_t i = 0; i < v.size(); ++i) {
         std::cout << v[i];
         if (i + 1 < v.size()) std::cout << ", ";
     }
-    std::cout << "]\n";
+    std::cout << "\n";
 }
 
 void printVector(const std::vector<double>& v) {
-    std::cout << "[";
     for (size_t i = 0; i < v.size(); ++i) {
         std::cout << std::fixed << std::setprecision(1) << v[i];
         if (i + 1 < v.size()) std::cout << ", ";
     }
-    std::cout << "]\n";
+    std::cout << "\n";
 }
 
 void printVectorDoubleToInt(const std::vector<double>& v) {
-    std::cout << "[";
     for (size_t i = 0; i < v.size(); ++i) {
         std::cout << std::fixed << std::setprecision(1) << static_cast<int>(v[i]);
         if (i + 1 < v.size()) std::cout << ", ";
     }
-    std::cout << "]\n";
+    std::cout << "\n";
 }
 
 void menuGenerate(GeneratorGraph& graph) {
@@ -69,14 +66,28 @@ void menuGenerate(GeneratorGraph& graph) {
     graph.generate();
     std::cout << "Граф сгенерирован.\n";
     graph.printAdjacencyMatrix();
+
 }
 
 void menuEccentricities(GeneratorGraph& graph) {
     printHeader("Эксцентриситеты, центр, диаметр");
     graph.computeEccentricities();
 
-    std::cout << "Эксцентриситеты вершин: ";
-    printVectorDoubleToInt(graph.getEccentricities());
+    auto ecc = graph.getEccentricities();
+    int n = ecc.size();
+    const int cellWidth = 4;
+
+    std::cout << "Вершина:        ";
+    for (int i = 0; i < n; ++i) {
+        std::cout << std::setw(cellWidth) << i;
+    }
+    std::cout << "\n";
+
+    std::cout << "Эксцентриситет: ";
+    for (int i = 0; i < n; ++i) {
+        std::cout << std::setw(cellWidth) << static_cast<int>(ecc[i]);
+    }
+    std::cout << "\n";
 
     std::cout << "Диаметр графа: " << graph.getDiameter() << "\n";
 
@@ -115,8 +126,8 @@ void menuShimbell(const GeneratorGraph& graph) {
     }
 
     int n = graph.getVertexCount();
-    int steps = readInt("Количество рёбер в пути [1, " + std::to_string(n - 1) + "]: ",
-                        1, n - 1);
+    int steps = readInt("Количество рёбер в пути [0, " + std::to_string(n) + "]: ",
+                        0, n);
     std::cout << "Искать:\n  1 — минимальный путь\n  2 — максимальный путь\n";
     int mode = readInt("> ", 1, 2);
 

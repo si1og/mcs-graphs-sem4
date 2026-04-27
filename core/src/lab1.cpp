@@ -49,20 +49,14 @@ std::vector<int> GeneratorGraph::m_generateDegreeSequence() {
 }
 
 void GeneratorGraph::testDistribution() {
-    std::vector<double> rawValues(m_vertexCount);
     std::vector<int> degrees(m_vertexCount);
 
     for (int i = 0; i < 30; ++i) {
-        std::cout << "Генерация №" << i << ":\n";
+        std::cout << "Генерация №" << (i + 1) << ":\n";
         for (int j = 0; j < m_vertexCount; ++j) {
-            rawValues[j] = m_sampleWeibull();
-            degrees[j] = rawValues[j] * m_vertexCount;
+            degrees = m_generateDegreeSequence();
         }
 
-        std::cout << "raw: ";
-        for (auto e : rawValues) std::cout << e << " ";
-        std::cout << "\n";
-        std::cout << "degrees: ";
         for (auto e : degrees) std::cout << e << " ";
         std::cout << "\n";
     }
@@ -83,7 +77,8 @@ void GeneratorGraph::generate() {
 
         std::vector<int> candidates;
         for (int j = i + 1; j < m_vertexCount; ++j) {
-            if (m_adjacencyMatrix(i, j) == 0) {  // ещё не добавлено
+            // если ещё не добавлено
+            if (m_adjacencyMatrix(i, j) == 0) {
                 candidates.push_back(j);
             }
         }
@@ -153,7 +148,8 @@ void GeneratorGraph::generateWeightMatrix(WeightMode mode) {
     for (int i = 0; i < m_vertexCount; ++i) {
         for (int j = 0; j < m_vertexCount; ++j) {
             if (m_adjacencyMatrix(i, j) != 0) {
-                double w = std::round(m_sampleWeibull());
+                const int WEIGHT_MATRIX_DIST_VALUE = 20;
+                double w = std::round(m_sampleWeibull() * WEIGHT_MATRIX_DIST_VALUE);
 
                 switch (mode) {
                     case WeightMode::Positive:
@@ -173,12 +169,18 @@ void GeneratorGraph::generateWeightMatrix(WeightMode mode) {
     isMatrixInit.weight = true;
 }
 
+//TODO: пофиксить матрицу шиблелла при steps = 0
+// посвторить определения из учебника
 Matrix GeneratorGraph::shimbell(int steps, bool findMin) const {
     const double NO_EDGE = findMin
         ? std::numeric_limits<double>::infinity()
         : -std::numeric_limits<double>::infinity();
 
     Matrix W(m_vertexCount, m_vertexCount, NO_EDGE);
+
+    if (steps == 0) {
+        return W;
+    }
 
     for (int i = 0; i < m_vertexCount; ++i) {
         for (int j = 0; j < m_vertexCount; ++j) {
@@ -192,6 +194,7 @@ Matrix GeneratorGraph::shimbell(int steps, bool findMin) const {
     for (int s = 1; s < steps; ++s) {
         result = findMin ? result.shimbellMin(W) : result.shimbellMax(W);
     }
+
     return result;
 }
 
