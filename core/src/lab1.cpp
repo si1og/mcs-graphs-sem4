@@ -141,12 +141,18 @@ std::vector<int> GeneratorGraph::getDiametralVertices() const { return m_diametr
 int GeneratorGraph::getDiameter() const { return m_diameter; }
 
 void GeneratorGraph::generateWeightMatrix(WeightMode mode) {
-    m_weightMatrix = Matrix(m_vertexCount, m_vertexCount);
+    const double INF = std::numeric_limits<double>::infinity();
+
+    m_weightMatrix = Matrix(m_vertexCount, m_vertexCount, INF);
 
     std::uniform_int_distribution<int> signDist(0, 1);
 
     for (int i = 0; i < m_vertexCount; ++i) {
+        m_weightMatrix(i, i) = 0;
+
         for (int j = 0; j < m_vertexCount; ++j) {
+            if (i == j) continue;
+
             if (m_adjacencyMatrix(i, j) != 0) {
                 const int WEIGHT_MATRIX_DIST_VALUE = 20;
                 double w = std::round(m_sampleWeibull() * WEIGHT_MATRIX_DIST_VALUE);
@@ -155,9 +161,11 @@ void GeneratorGraph::generateWeightMatrix(WeightMode mode) {
                     case WeightMode::Positive:
                         m_weightMatrix(i, j) = w;
                         break;
+
                     case WeightMode::Negative:
                         m_weightMatrix(i, j) = -w;
                         break;
+
                     case WeightMode::Mixed:
                         m_weightMatrix(i, j) = signDist(m_rng) ? w : -w;
                         break;
@@ -169,8 +177,6 @@ void GeneratorGraph::generateWeightMatrix(WeightMode mode) {
     isMatrixInit.weight = true;
 }
 
-//TODO: пофиксить матрицу шиблелла при steps = 0
-// посвторить определения из учебника
 Matrix GeneratorGraph::shimbell(int steps, bool findMin) const {
     const double NO_EDGE = findMin
         ? std::numeric_limits<double>::infinity()
@@ -179,6 +185,9 @@ Matrix GeneratorGraph::shimbell(int steps, bool findMin) const {
     Matrix W(m_vertexCount, m_vertexCount, NO_EDGE);
 
     if (steps == 0) {
+        for (int i = 0; i < m_vertexCount; ++i) {
+            W(i, i) = 0;
+        }
         return W;
     }
 
@@ -191,8 +200,13 @@ Matrix GeneratorGraph::shimbell(int steps, bool findMin) const {
     }
 
     Matrix result = W;
+
     for (int s = 1; s < steps; ++s) {
         result = findMin ? result.shimbellMin(W) : result.shimbellMax(W);
+    }
+
+    for (int i = 0; i < m_vertexCount; ++i) {
+        result(i, i) = 0;
     }
 
     return result;

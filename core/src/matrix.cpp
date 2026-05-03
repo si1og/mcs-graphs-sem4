@@ -78,7 +78,7 @@ void Matrix::print(PrintMode mode) const {
         for (int j = 0; j < m_cols; ++j) {
             double val = m_data[i][j];
             if (std::isinf(val)) {
-                std::cout << std::setw(cellWidth) << (val > 0 ? "+inf" : "-inf");;
+                std::cout << std::setw(cellWidth) << "inf";
             } else if (mode == PrintMode::Double) {
                 std::cout << std::setw(cellWidth) << std::fixed << std::setprecision(1) << val;
             } else {
