@@ -1,4 +1,4 @@
-#include "lab1.h"
+#include "generator_graph.h"
 #include <algorithm>
 // #include <queue>
 #include <iostream>

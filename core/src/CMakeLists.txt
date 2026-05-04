@@ -1,9 +1,9 @@
-add_library(lab1_core STATIC
+add_library(core STATIC
     matrix.cpp
     graph.cpp
-    lab1.cpp
+    generator_graph.cpp
 )
 
-target_include_directories(lab1_core PUBLIC
+target_include_directories(core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )

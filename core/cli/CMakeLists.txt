@@ -1,3 +1,7 @@
-add_executable(lab1 lab1.cpp)
+function(add_lab name)
+  add_executable(${name} ${name}.cpp)
+  target_link_libraries(${name} PRIVATE core)
+endfunction()
 
-target_link_libraries(lab1 PRIVATE lab1_core)
+add_lab(lab1)
+add_lab(lab2)
