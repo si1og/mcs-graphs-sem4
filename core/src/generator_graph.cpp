@@ -235,6 +235,7 @@ int GeneratorGraph::countRoutes(int from, int to) const {
     return total;
 }
 
+
 void GeneratorGraph::m_dfsArticulation(int v,
                                         int parent,
                                         std::vector<int>& tin,
@@ -278,6 +279,9 @@ void GeneratorGraph::m_dfsArticulation(int v,
     }
 }
 
+// упрощенный упрощённый алгоритм Тарьяна (лек. 4 стр. 11 - полный)
+// не использует стек рёбер
+// квадратичная сложность из-за использования матрицы смежности, так, сложность O(V + E)
 std::vector<int> GeneratorGraph::findArticulationPoints() const {
     std::vector<int> tin(m_vertexCount, -1);
     std::vector<int> low(m_vertexCount, -1);
