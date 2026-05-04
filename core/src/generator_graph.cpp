@@ -1,10 +1,4 @@
 #include "generator_graph.h"
-#include <algorithm>
-// #include <queue>
-#include <iostream>
-#include <limits>
-#include <cmath>
-#include <vector>
 
 GeneratorGraph::GeneratorGraph(int vertexCount,
                                double weibullA,
@@ -242,13 +236,16 @@ void GeneratorGraph::m_dfsArticulation(int v,
                                         std::vector<int>& low,
                                         std::vector<bool>& visited,
                                         std::vector<bool>& isAP,
-                                        int& timer) const {
+                                        int& timer,
+                                        int& iterations) const {
     visited[v] = true;
     tin[v] = low[v] = timer++;
 
     int children = 0;
 
     for (int u = 0; u < m_vertexCount; ++u) {
+        iterations++;
+
         if (u == v) continue;
 
         if (m_adjacencyMatrix(v, u) == 0 && m_adjacencyMatrix(u, v) == 0) {
@@ -264,7 +261,7 @@ void GeneratorGraph::m_dfsArticulation(int v,
         } else {
             ++children;
 
-            m_dfsArticulation(u, v, tin, low, visited, isAP, timer);
+            m_dfsArticulation(u, v, tin, low, visited, isAP, timer, iterations);
 
             low[v] = std::min(low[v], low[u]);
 
@@ -281,25 +278,25 @@ void GeneratorGraph::m_dfsArticulation(int v,
 
 // упрощенный упрощённый алгоритм Тарьяна (лек. 4 стр. 11 - полный)
 // не использует стек рёбер
-// квадратичная сложность из-за использования матрицы смежности, так, сложность O(V + E)
-std::vector<int> GeneratorGraph::findArticulationPoints() const {
+// квадратичная сложность из-за использования матрицы смежности, со списками сложность O(V + E)
+ArticulationPointsResult GeneratorGraph::findArticulationPoints() const {
     std::vector<int> tin(m_vertexCount, -1);
     std::vector<int> low(m_vertexCount, -1);
     std::vector<bool> visited(m_vertexCount, false);
     std::vector<bool> isAP(m_vertexCount, false);
 
     int timer = 0;
+    ArticulationPointsResult result;
 
     for (int v = 0; v < m_vertexCount; ++v) {
         if (!visited[v]) {
-            m_dfsArticulation(v, -1, tin, low, visited, isAP, timer);
+            m_dfsArticulation(v, -1, tin, low, visited, isAP, timer, result.iterations);
         }
     }
 
-    std::vector<int> result;
     for (int v = 0; v < m_vertexCount; ++v) {
         if (isAP[v]) {
-            result.push_back(v);
+            result.points.push_back(v);
         }
     }
 
@@ -328,13 +325,20 @@ std::vector<int> GeneratorGraph::m_restorePath(int s,
     return path;
 }
 
+//TODO: обосновать очередь
+//кол-во итераций всегда выводится
+//при перегенерации графа выводить число вершин
 ShortestPathResult GeneratorGraph::dijkstraNegative(int s, int t) const {
     const double INF = std::numeric_limits<double>::infinity();
 
     ShortestPathResult result;
 
+    // T[v] - длина клатчайщего пути от s к v
+    // H[v] - вершина, предшествующая v по кратчайшему пути
+
     std::vector<double> T(m_vertexCount, INF);
     std::vector<int> H(m_vertexCount, -1);
+
     std::vector<bool> inQ(m_vertexCount, false);
     std::vector<int> relaxCount(m_vertexCount, 0);
 
@@ -360,6 +364,7 @@ ShortestPathResult GeneratorGraph::dijkstraNegative(int s, int t) const {
                 continue;
             }
 
+            // по нер-ву треугольника
             if (T[v] != INF && T[u] > T[v] + m_weightMatrix(v, u)) {
                 T[u] = T[v] + m_weightMatrix(v, u);
                 H[u] = v;
@@ -371,6 +376,7 @@ ShortestPathResult GeneratorGraph::dijkstraNegative(int s, int t) const {
 
                 ++relaxCount[u];
 
+                // выходим, если пошли по циклу
                 if (relaxCount[u] >= m_vertexCount) {
                     result.hasNegativeCycle = true;
                     break;

@@ -26,6 +26,11 @@ struct ShortestPathResult {
     bool hasNegativeCycle = false;
 };
 
+struct ArticulationPointsResult {
+    std::vector<int> points;
+    int iterations = 0;
+};
+
 class GeneratorGraph : public Graph {
 public:
     GeneratorGraph(int vertexCount,
@@ -49,7 +54,7 @@ public:
     void testDistribution();
 
     //lab2
-    std::vector<int> findArticulationPoints() const;
+    ArticulationPointsResult findArticulationPoints() const;
     ShortestPathResult dijkstraNegative(int start, int finish) const;
 
 private:
@@ -75,6 +80,7 @@ private:
                            std::vector<int>& low,
                            std::vector<bool>& visited,
                            std::vector<bool>& isAP,
-                           int& timer) const;
+                           int& timer,
+                           int& iterations) const;
     std::vector<int> m_restorePath(int s, int t, const std::vector<int>& H) const;
 };

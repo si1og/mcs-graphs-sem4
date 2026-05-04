@@ -164,20 +164,28 @@ void menuPrintMatrices(const GeneratorGraph& graph) {
 
 void menuFindArticulationPoints(const GeneratorGraph& graph) {
     printHeader("Точки сочленения");
-    std::vector<int> articulationPoints = graph.findArticulationPoints();
-    if (articulationPoints.empty()) {
+    ArticulationPointsResult result = graph.findArticulationPoints();
+    if (result.points.empty()) {
         std::cout << "Точки сочленения не найдены.\n";
     } else {
         std::cout << "Точки сочленения: ";
-        for (int v : articulationPoints) {
+        for (int v : result.points) {
             std::cout << v << " ";
         }
         std::cout << "\n";
+
+        std::cout << "Число итераций: " << result.iterations << "\n";
     }
 }
 
 void runDijkstraNegative(GeneratorGraph& graph) {
     printHeader("Алгоритм Дейкстры для отрицательных весов");
+
+    if (!graph.isMatrixInit.weight) {
+        std::cout << "Весовая матрица не инициализирована.\n";
+        return;
+    }
+
     int s;
     int t;
 
@@ -250,7 +258,7 @@ void printMenu() {
 }
 
 int main() {
-    std::cout << "=== Лабораторная работа №2 ===\n";
+    std::cout << "=== Теория графов ===\n";
 
     int n = readInt("Количество вершин (>=2): ", 2, 100);
 
