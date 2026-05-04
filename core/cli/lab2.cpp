@@ -176,6 +176,64 @@ void menuFindArticulationPoints(const GeneratorGraph& graph) {
     }
 }
 
+void runDijkstraNegative(GeneratorGraph& graph) {
+    printHeader("Алгоритм Дейкстры для отрицательных весов");
+    int s;
+    int t;
+
+    std::cout << "Введите начальную вершину: ";
+    std::cin >> s;
+
+    std::cout << "Введите конечную вершину: ";
+    std::cin >> t;
+
+    int start = s;
+    int end = t;
+
+    auto result = graph.dijkstraNegative(s, t);
+
+    if (!result.hasPath) {
+        std::cout << "Нет пути из " << start << " в " << end << "!\n";
+        std::cout << "Количество итераций: " << result.iterations << "\n";
+        return;
+    }
+
+    std::string wayString;
+    std::string distanceString;
+
+    double sum = 0;
+
+    for (size_t i = 0; i < result.path.size(); ++i) {
+        if (i > 0) {
+            wayString += ", ";
+        }
+
+        wayString += std::to_string(result.path[i]);
+    }
+
+    for (size_t i = 1; i < result.path.size(); ++i) {
+        int from = result.path[i - 1];
+        int to = result.path[i];
+
+        double weight = graph.getWeightMatrix()(from, to);
+
+        if (i > 1) {
+            distanceString += ", ";
+        }
+
+        distanceString += std::to_string(static_cast<int>(weight));
+        sum += weight;
+    }
+
+    std::cout << "Кратчайший маршрут из " << start << " в " << end
+              << " : (" << wayString << ")\n";
+
+    std::cout << "Вектор расстояний: (" << distanceString
+              << "); sum: " << sum << "\n";
+
+    std::cout << "Количество итераций: " << result.iterations << "\n";
+}
+
 void printMenu() {
     std::cout << "\n----- Меню -----\n"
               << "1. Сгенерировать граф\n"
@@ -185,6 +243,7 @@ void printMenu() {
               << "5. Маршруты между вершинами\n"
               << "6. Показать текущие матрицы\n"
               << "7. Найти точки сочленения\n"
+              << "8. Алгоритм Дейкстры для отрицательных весов\n"
               << "0. Выход\n";
 }
 
@@ -203,7 +262,7 @@ int main() {
 
     while (true) {
         printMenu();
-        int choice = readInt("> ", 0, 7);
+        int choice = readInt("> ", 0, 8);
         if (choice == 0) break;
 
         switch (choice) {
@@ -214,6 +273,7 @@ int main() {
             case 5: menuRoutes(graph); break;
             case 6: menuPrintMatrices(graph); break;
             case 7: menuFindArticulationPoints(graph); break;
+            case 8: runDijkstraNegative(graph); break;
         }
     }
 

@@ -4,11 +4,26 @@
 #include "constants.h"
 #include <random>
 #include <vector>
+#include <queue>
+#include <limits>
+#include <algorithm>
 
 enum class WeightMode {
     Positive,
     Negative,
     Mixed
+};
+
+struct ShortestPathResult {
+    std::vector<double> T;
+    std::vector<int> H;
+    std::vector<int> path;
+
+    double distance = 0;
+    int iterations = 0;
+
+    bool hasPath = false;
+    bool hasNegativeCycle = false;
 };
 
 class GeneratorGraph : public Graph {
@@ -35,6 +50,7 @@ public:
 
     //lab2
     std::vector<int> findArticulationPoints() const;
+    ShortestPathResult dijkstraNegative(int start, int finish) const;
 
 private:
     std::mt19937 m_rng;
@@ -60,4 +76,5 @@ private:
                            std::vector<bool>& visited,
                            std::vector<bool>& isAP,
                            int& timer) const;
+    std::vector<int> m_restorePath(int s, int t, const std::vector<int>& H) const;
 };

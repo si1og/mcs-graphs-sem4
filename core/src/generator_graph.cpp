@@ -305,3 +305,93 @@ std::vector<int> GeneratorGraph::findArticulationPoints() const {
 
     return result;
 }
+
+std::vector<int> GeneratorGraph::m_restorePath(int s,
+                                               int t,
+                                               const std::vector<int>& H) const {
+    std::vector<int> path;
+
+    for (int v = t; v != -1; v = H[v]) {
+        path.push_back(v);
+
+        if (v == s) {
+            break;
+        }
+    }
+
+    std::reverse(path.begin(), path.end());
+
+    if (path.empty() || path.front() != s) {
+        path.clear();
+    }
+
+    return path;
+}
+
+ShortestPathResult GeneratorGraph::dijkstraNegative(int s, int t) const {
+    const double INF = std::numeric_limits<double>::infinity();
+
+    ShortestPathResult result;
+
+    std::vector<double> T(m_vertexCount, INF);
+    std::vector<int> H(m_vertexCount, -1);
+    std::vector<bool> inQ(m_vertexCount, false);
+    std::vector<int> relaxCount(m_vertexCount, 0);
+
+    std::queue<int> Q;
+
+    int iterations = 0;
+
+    T[s] = 0;
+    H[s] = -1;
+
+    Q.push(s);
+    inQ[s] = true;
+
+    while (!Q.empty()) {
+        int v = Q.front();
+        Q.pop();
+        inQ[v] = false;
+
+        for (int u = 0; u < m_vertexCount; ++u) {
+            ++iterations;
+
+            if (m_adjacencyMatrix(v, u) == 0) {
+                continue;
+            }
+
+            if (T[v] != INF && T[u] > T[v] + m_weightMatrix(v, u)) {
+                T[u] = T[v] + m_weightMatrix(v, u);
+                H[u] = v;
+
+                if (!inQ[u]) {
+                    Q.push(u);
+                    inQ[u] = true;
+                }
+
+                ++relaxCount[u];
+
+                if (relaxCount[u] >= m_vertexCount) {
+                    result.hasNegativeCycle = true;
+                    break;
+                }
+            }
+        }
+
+        if (result.hasNegativeCycle) {
+            break;
+        }
+    }
+
+    result.T = T;
+    result.H = H;
+    result.iterations = iterations;
+    result.hasPath = T[t] != INF;
+    result.distance = T[t];
+
+    if (result.hasPath && !result.hasNegativeCycle) {
+        result.path = m_restorePath(s, t, H);
+    }
+
+    return result;
+}
