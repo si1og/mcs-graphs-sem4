@@ -162,6 +162,20 @@ void menuPrintMatrices(const GeneratorGraph& graph) {
     graph.printWeightMatrix();
 }
 
+void menuFindArticulationPoints(const GeneratorGraph& graph) {
+    printHeader("Точки сочленения");
+    std::vector<int> articulationPoints = graph.findArticulationPoints();
+    if (articulationPoints.empty()) {
+        std::cout << "Точки сочленения не найдены.\n";
+    } else {
+        std::cout << "Точки сочленения: ";
+        for (int v : articulationPoints) {
+            std::cout << v << " ";
+        }
+        std::cout << "\n";
+    }
+}
+
 void printMenu() {
     std::cout << "\n----- Меню -----\n"
               << "1. Сгенерировать граф\n"
@@ -170,14 +184,14 @@ void printMenu() {
               << "4. Алгоритм Шимбелла\n"
               << "5. Маршруты между вершинами\n"
               << "6. Показать текущие матрицы\n"
-              << "7. Тест распределения степеней\n"
+              << "7. Найти точки сочленения\n"
               << "0. Выход\n";
 }
 
 }
 
 int main() {
-    std::cout << "=== Лабораторная работа №1 ===\n";
+    std::cout << "=== Лабораторная работа №2 ===\n";
 
     int n = readInt("Количество вершин (>=2): ", 2, 100);
 
@@ -193,13 +207,13 @@ int main() {
         if (choice == 0) break;
 
         switch (choice) {
-            case 1: menuGenerate(graph);        break;
-            case 2: menuEccentricities(graph);  break;
-            case 3: menuWeights(graph);         break;
-            case 4: menuShimbell(graph);        break;
-            case 5: menuRoutes(graph);          break;
-            case 6: menuPrintMatrices(graph);   break;
-            case 7: graph.testDistribution();   break;
+            case 1: menuGenerate(graph); break;
+            case 2: menuEccentricities(graph); break;
+            case 3: menuWeights(graph); break;
+            case 4: menuShimbell(graph); break;
+            case 5: menuRoutes(graph); break;
+            case 6: menuPrintMatrices(graph); break;
+            case 7: menuFindArticulationPoints(graph); break;
         }
     }
 

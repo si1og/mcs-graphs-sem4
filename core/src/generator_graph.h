@@ -33,6 +33,9 @@ public:
     int countRoutes(int from, int to) const;
     void testDistribution();
 
+    //lab2
+    std::vector<int> findArticulationPoints() const;
+
 private:
     std::mt19937 m_rng;
     std::uniform_real_distribution<double> m_uniformDist;
@@ -48,4 +51,13 @@ private:
 
     double m_sampleWeibull();
     std::vector<int> m_generateDegreeSequence();
+
+    //lab2
+    void m_dfsArticulation(int v,
+                           int parent,
+                           std::vector<int>& tin,
+                           std::vector<int>& low,
+                           std::vector<bool>& visited,
+                           std::vector<bool>& isAP,
+                           int& timer) const;
 };

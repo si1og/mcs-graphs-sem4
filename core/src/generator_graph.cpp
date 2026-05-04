@@ -234,3 +234,70 @@ int GeneratorGraph::countRoutes(int from, int to) const {
     }
     return total;
 }
+
+void GeneratorGraph::m_dfsArticulation(int v,
+                                        int parent,
+                                        std::vector<int>& tin,
+                                        std::vector<int>& low,
+                                        std::vector<bool>& visited,
+                                        std::vector<bool>& isAP,
+                                        int& timer) const {
+    visited[v] = true;
+    tin[v] = low[v] = timer++;
+
+    int children = 0;
+
+    for (int u = 0; u < m_vertexCount; ++u) {
+        if (u == v) continue;
+
+        if (m_adjacencyMatrix(v, u) == 0 && m_adjacencyMatrix(u, v) == 0) {
+            continue;
+        }
+
+        if (u == parent) {
+            continue;
+        }
+
+        if (visited[u]) {
+            low[v] = std::min(low[v], tin[u]);
+        } else {
+            ++children;
+
+            m_dfsArticulation(u, v, tin, low, visited, isAP, timer);
+
+            low[v] = std::min(low[v], low[u]);
+
+            if (parent != -1 && low[u] >= tin[v]) {
+                isAP[v] = true;
+            }
+        }
+    }
+
+    if (parent == -1 && children > 1) {
+        isAP[v] = true;
+    }
+}
+
+std::vector<int> GeneratorGraph::findArticulationPoints() const {
+    std::vector<int> tin(m_vertexCount, -1);
+    std::vector<int> low(m_vertexCount, -1);
+    std::vector<bool> visited(m_vertexCount, false);
+    std::vector<bool> isAP(m_vertexCount, false);
+
+    int timer = 0;
+
+    for (int v = 0; v < m_vertexCount; ++v) {
+        if (!visited[v]) {
+            m_dfsArticulation(v, -1, tin, low, visited, isAP, timer);
+        }
+    }
+
+    std::vector<int> result;
+    for (int v = 0; v < m_vertexCount; ++v) {
+        if (isAP[v]) {
+            result.push_back(v);
+        }
+    }
+
+    return result;
+}
