@@ -11,4 +11,4 @@ fi
 
 cmake --build "$BUILD_DIR" -j
 
-./"$BUILD_DIR"/cli/"$LAB"
+./"$BUILD_DIR"/cli/cli

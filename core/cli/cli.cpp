@@ -394,3 +394,10 @@ void CLI::run() {
 
     std::cout << "Выход.\n";
 }
+
+int main() {
+    CLI cli;
+    cli.run();
+
+    return 0;
+}
