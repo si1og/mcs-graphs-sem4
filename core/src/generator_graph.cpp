@@ -459,3 +459,107 @@ void GeneratorGraph::printCostMatrix() const {
     std::cout << "Матрица стоимостей:\n";
     m_costMatrix.print();
 }
+
+bool GeneratorGraph::isCapacityMatrixGenerated() const {
+    return isMatrixInit.capacity;
+}
+
+namespace {
+
+int bfsForFlow(const Matrix& residual,
+               int vertexCount,
+               int source,
+               int sink,
+               std::vector<int>& parent,
+               int& iterations) {
+    const int INF = std::numeric_limits<int>::max();
+
+    parent.assign(vertexCount, -1);
+    parent[source] = -2;
+
+    std::queue<std::pair<int, int>> q;
+    q.push({source, INF});
+
+    while (!q.empty()) {
+        int v = q.front().first;
+        int flow = q.front().second;
+
+        q.pop();
+
+        for (int u = 0; u < vertexCount; ++u) {
+            ++iterations;
+
+            if (parent[u] == -1 && residual(v, u) > 0) {
+                parent[u] = v;
+
+                int newFlow = std::min(
+                    flow,
+                    static_cast<int>(residual(v, u))
+                );
+
+                if (u == sink) {
+                    return newFlow;
+                }
+
+                q.push({u, newFlow});
+            }
+        }
+    }
+
+    return 0;
+}
+
+}
+
+// алгоритм Форда-Фалкерсона
+// увеличивающий путь ищется поиском в ширину
+// т.е. используется вариант Эдмондса-Карпа
+MaxFlowResult GeneratorGraph::fordFulkerson(int source, int sink) const {
+    MaxFlowResult result(m_vertexCount);
+
+    if (!isMatrixInit.capacity) {
+        return result;
+    }
+
+    if (source < 0 || source >= m_vertexCount ||
+        sink < 0 || sink >= m_vertexCount ||
+        source == sink) {
+        return result;
+    }
+
+    Matrix residual = m_capacityMatrix;
+    std::vector<int> parent(m_vertexCount, -1);
+
+    while (true) {
+        int flow = bfsForFlow(
+            residual,
+            m_vertexCount,
+            source,
+            sink,
+            parent,
+            result.iterations
+        );
+
+        if (flow == 0) {
+            break;
+        }
+
+        result.maxFlow += flow;
+
+        int current = sink;
+
+        while (current != source) {
+            int previous = parent[current];
+
+            residual(previous, current) -= flow;
+            residual(current, previous) += flow;
+
+            result.flowMatrix(previous, current) += flow;
+            result.flowMatrix(current, previous) -= flow;
+
+            current = previous;
+        }
+    }
+
+    return result;
+}

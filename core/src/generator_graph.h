@@ -2,6 +2,7 @@
 
 #include "graph.h"
 #include "constants.h"
+#include "flows.h"
 #include <random>
 #include <vector>
 #include <queue>
@@ -63,6 +64,17 @@ public:
 
     void printCapacityMatrix() const;
     void printCostMatrix() const;
+
+    bool isCapacityMatrixGenerated() const;
+
+    // Потоковые алгоритмы
+    MaxFlowResult fordFulkerson(int source, int sink) const;
+
+    MinCostFlowResult minCostFlow(
+        int source,
+        int sink,
+        int requiredFlow
+    ) const;
 
 private:
     std::mt19937 m_rng;

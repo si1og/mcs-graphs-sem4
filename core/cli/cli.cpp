@@ -339,6 +339,42 @@ void CLI::m_menuCapacityAndCostMatrices() {
     m_graph->printCostMatrix();
 }
 
+void CLI::m_menuMaxFlow() {
+    m_printHeader("Максимальный поток");
+
+    if (!m_graph->isCapacityMatrixGenerated()) {
+        std::cout << "Сначала сгенерируйте матрицу пропускных способностей.\n";
+        return;
+    }
+
+    int vertexCount = m_graph->getVertexCount();
+
+    std::cout << "Источник:\n";
+    int source = m_readInt("> ", 0, vertexCount - 1);
+
+    std::cout << "Сток:\n";
+    int sink = m_readInt("> ", 0, vertexCount - 1);
+
+    if (source == sink) {
+        std::cout << "Источник и сток должны различаться.\n";
+        return;
+    }
+
+    auto result = m_graph->fordFulkerson(source, sink);
+
+    std::cout << "\nМаксимальный поток: "
+              << result.maxFlow
+              << "\n";
+
+    std::cout << "Количество итераций BFS: "
+              << result.iterations
+              << "\n\n";
+
+    std::cout << "Матрица потоков:\n";
+
+    result.flowMatrix.print();
+}
+
 void CLI::m_printMenu() const {
     std::cout
         << "\n----- Меню -----\n"
@@ -351,6 +387,7 @@ void CLI::m_printMenu() const {
         << "7. Найти точки сочленения\n"
         << "8. Алгоритм Дейкстры для отрицательных весов\n"
         << "9. Сгенерировать матрицы пропускных способностей и стоимостей\n"
+        << "10. Максимальный поток\n"
         << "0. Выход\n";
 }
 
@@ -367,7 +404,7 @@ void CLI::run() {
     while (true) {
         m_printMenu();
 
-        int choice = m_readInt("> ", 0, 9);
+        int choice = m_readInt("> ", 0, 10);
 
         if (choice == 0) {
             break;
@@ -408,6 +445,10 @@ void CLI::run() {
 
             case 9:
                 m_menuCapacityAndCostMatrices();
+                break;
+
+            case 10:
+                m_menuMaxFlow();
                 break;
         }
     }
