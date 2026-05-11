@@ -414,3 +414,46 @@ ShortestPathResult GeneratorGraph::dijkstraNegative(int s, int t) const {
 
     return result;
 }
+
+// lab3
+
+void GeneratorGraph::generateCapacityAndCostMatrices() {
+    m_capacityMatrix = Matrix(m_vertexCount, m_vertexCount, 0);
+    m_costMatrix = Matrix(m_vertexCount, m_vertexCount, 0);
+
+    for (int i = 0; i < m_vertexCount; ++i) {
+        for (int j = 0; j < m_vertexCount; ++j) {
+            if (m_adjacencyMatrix(i, j) != 0) {
+                double capacityRaw = m_sampleWeibull(constants::capacity);
+                double costRaw = m_sampleWeibull(constants::cost);
+
+                int capacity = std::max(1, static_cast<int>(std::round(capacityRaw * 10)));
+                int cost = std::max(1, static_cast<int>(std::round(costRaw * 10)));
+
+                m_capacityMatrix(i, j) = capacity;
+                m_costMatrix(i, j) = cost;
+            }
+        }
+    }
+
+    isMatrixInit.capacity = true;
+    isMatrixInit.cost = true;
+}
+
+const Matrix& GeneratorGraph::getCapacityMatrix() const {
+    return m_capacityMatrix;
+}
+
+const Matrix& GeneratorGraph::getCostMatrix() const {
+    return m_costMatrix;
+}
+
+void GeneratorGraph::printCapacityMatrix() const {
+    std::cout << "Матрица пропускных способностей:\n";
+    m_capacityMatrix.print();
+}
+
+void GeneratorGraph::printCostMatrix() const {
+    std::cout << "Матрица стоимостей:\n";
+    m_costMatrix.print();
+}

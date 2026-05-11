@@ -55,6 +55,15 @@ public:
     ArticulationPointsResult findArticulationPoints() const;
     ShortestPathResult dijkstraNegative(int start, int finish) const;
 
+    // lab3
+    void generateCapacityAndCostMatrices();
+
+    const Matrix& getCapacityMatrix() const;
+    const Matrix& getCostMatrix() const;
+
+    void printCapacityMatrix() const;
+    void printCostMatrix() const;
+
 private:
     std::mt19937 m_rng;
     std::uniform_real_distribution<double> m_uniformDist;
@@ -77,4 +86,8 @@ private:
                            int& timer,
                            int& iterations) const;
     std::vector<int> m_restorePath(int s, int t, const std::vector<int>& H) const;
+
+    // lab3
+    Matrix m_capacityMatrix;
+    Matrix m_costMatrix;
 };

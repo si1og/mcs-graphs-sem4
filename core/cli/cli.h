@@ -30,6 +30,10 @@ private:
     void m_menuRoutes() const;
     void m_menuPrintMatrices() const;
 
+    // lab2
     void m_menuFindArticulationPoints() const;
     void m_runDijkstraNegative();
+
+    // lab3
+    void m_menuCapacityAndCostMatrices();
 };

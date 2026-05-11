@@ -325,6 +325,20 @@ void CLI::m_runDijkstraNegative() {
         << "\n";
 }
 
+void CLI::m_menuCapacityAndCostMatrices() {
+    m_printHeader("Матрицы пропускных способностей и стоимостей");
+
+    m_graph->generateCapacityAndCostMatrices();
+
+    std::cout << "Матрицы сгенерированы.\n\n";
+
+    m_graph->printCapacityMatrix();
+
+    std::cout << "\n";
+
+    m_graph->printCostMatrix();
+}
+
 void CLI::m_printMenu() const {
     std::cout
         << "\n----- Меню -----\n"
@@ -336,6 +350,7 @@ void CLI::m_printMenu() const {
         << "6. Показать текущие матрицы\n"
         << "7. Найти точки сочленения\n"
         << "8. Алгоритм Дейкстры для отрицательных весов\n"
+        << "9. Сгенерировать матрицы пропускных способностей и стоимостей\n"
         << "0. Выход\n";
 }
 
@@ -352,7 +367,7 @@ void CLI::run() {
     while (true) {
         m_printMenu();
 
-        int choice = m_readInt("> ", 0, 8);
+        int choice = m_readInt("> ", 0, 9);
 
         if (choice == 0) {
             break;
@@ -389,6 +404,10 @@ void CLI::run() {
 
             case 8:
                 m_runDijkstraNegative();
+                break;
+
+            case 9:
+                m_menuCapacityAndCostMatrices();
                 break;
         }
     }

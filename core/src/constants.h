@@ -6,8 +6,6 @@
  * SHIFT -> y0
  */
 
-#pragma once
-
 struct WeibullParams {
     double scale;
     double shape;
@@ -28,4 +26,16 @@ inline constexpr WeibullParams weight {
     .shift = 0.1
 };
 
+inline constexpr WeibullParams capacity {
+    .scale = 0.5,
+    .shape = 2.0,
+    .shift = 0.2
 };
+
+inline constexpr WeibullParams cost {
+    .scale = 0.4,
+    .shape = 2.0,
+    .shift = 0.1
+};
+
+}

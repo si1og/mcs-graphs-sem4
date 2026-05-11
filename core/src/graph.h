@@ -17,6 +17,8 @@ public:
     struct isMatrixInit {
         bool adjacency = false;
         bool weight = false;
+        bool capacity = false;
+        bool cost = false;
     } isMatrixInit;
 
 protected:
