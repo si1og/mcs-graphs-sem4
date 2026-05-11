@@ -54,7 +54,11 @@ public:
 
     //lab2
     ArticulationPointsResult findArticulationPoints() const;
-    ShortestPathResult dijkstraNegative(int start, int finish) const;
+    ShortestPathResult dijkstraNegative(int s, int t) const;
+    ShortestPathResult dijkstraNegative(int s,
+                                        int t,
+                                        const Matrix& adjacency,
+                                        const Matrix& weight) const;
 
     // lab3
     void generateCapacityAndCostMatrices();
@@ -66,6 +70,7 @@ public:
     void printCostMatrix() const;
 
     bool isCapacityMatrixGenerated() const;
+    bool isCostMatrixGenerated() const;
 
     // Потоковые алгоритмы
     MaxFlowResult fordFulkerson(int source, int sink) const;

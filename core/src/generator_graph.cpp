@@ -331,7 +331,12 @@ std::vector<int> GeneratorGraph::m_restorePath(int s,
 //
 // 3) при перегенерации графа вводить число вершин
 //  - поправил
-ShortestPathResult GeneratorGraph::dijkstraNegative(int s, int t) const {
+ShortestPathResult GeneratorGraph::dijkstraNegative(
+    int s,
+    int t,
+    const Matrix& adjacency,
+    const Matrix& weight
+) const {
     const double INF = std::numeric_limits<double>::infinity();
 
     ShortestPathResult result;
@@ -360,7 +365,7 @@ ShortestPathResult GeneratorGraph::dijkstraNegative(int s, int t) const {
     T[s] = 0;
     H[s] = -1;
 
-    Q.push({T[s], s});
+    Q.push({0, s});
 
     while (!Q.empty()) {
         double currentDistance = Q.top().first;
@@ -368,8 +373,7 @@ ShortestPathResult GeneratorGraph::dijkstraNegative(int s, int t) const {
 
         Q.pop();
 
-        // пропускаем старые значения
-        // вершина могла попасть в очередь несколько раз
+        // пропускаем устаревшую запись
         if (currentDistance != T[v]) {
             continue;
         }
@@ -377,16 +381,15 @@ ShortestPathResult GeneratorGraph::dijkstraNegative(int s, int t) const {
         for (int u = 0; u < m_vertexCount; ++u) {
             ++iterations;
 
-            if (m_adjacencyMatrix(v, u) == 0) {
+            if (adjacency(v, u) == 0) {
                 continue;
             }
 
             // по нер-ву треугольника
-            if (T[v] != INF && T[u] > T[v] + m_weightMatrix(v, u)) {
-                T[u] = T[v] + m_weightMatrix(v, u);
+            if (T[v] != INF && T[u] > T[v] + weight(v, u)) {
+                T[u] = T[v] + weight(v, u);
                 H[u] = v;
 
-                // добавляем вершину с новой меткой
                 Q.push({T[u], u});
 
                 ++relaxCount[u];
@@ -406,7 +409,9 @@ ShortestPathResult GeneratorGraph::dijkstraNegative(int s, int t) const {
 
     result.T = T;
     result.H = H;
+
     result.iterations = iterations;
+
     result.hasPath = T[t] != INF;
     result.distance = T[t];
 
@@ -415,6 +420,15 @@ ShortestPathResult GeneratorGraph::dijkstraNegative(int s, int t) const {
     }
 
     return result;
+}
+
+ShortestPathResult GeneratorGraph::dijkstraNegative(int s, int t) const {
+    return dijkstraNegative(
+        s,
+        t,
+        m_adjacencyMatrix,
+        m_weightMatrix
+    );
 }
 
 // lab3
@@ -462,6 +476,10 @@ void GeneratorGraph::printCostMatrix() const {
 
 bool GeneratorGraph::isCapacityMatrixGenerated() const {
     return isMatrixInit.capacity;
+}
+
+bool GeneratorGraph::isCostMatrixGenerated() const {
+    return isMatrixInit.cost;
 }
 
 namespace {
@@ -554,12 +572,118 @@ MaxFlowResult GeneratorGraph::fordFulkerson(int source, int sink) const {
             residual(previous, current) -= flow;
             residual(current, previous) += flow;
 
-            result.flowMatrix(previous, current) += flow;
-            result.flowMatrix(current, previous) -= flow;
+            if (m_capacityMatrix(previous, current) > 0) {
+                // идём по исходной дуге
+                result.flowMatrix(previous, current) += flow;
+            } else {
+                // идём по обратной дуге остаточной сети
+                // значит уменьшаем поток по исходной дуге current -> previous
+                result.flowMatrix(current, previous) -= flow;
+            }
 
             current = previous;
         }
     }
+
+    return result;
+}
+
+// поток минимальной стоимости
+// заданная величина потока передаётся параметром requiredFlow
+// на каждой итерации ищем кратчайший путь в остаточной сети
+MinCostFlowResult GeneratorGraph::minCostFlow(int source,
+                                              int sink,
+                                              int requiredFlow) const {
+    MinCostFlowResult result(m_vertexCount);
+
+    result.requiredFlow = requiredFlow;
+
+    if (!isMatrixInit.capacity || !isMatrixInit.cost) {
+        return result;
+    }
+
+    if (source < 0 || source >= m_vertexCount ||
+        sink < 0 || sink >= m_vertexCount ||
+        source == sink ||
+        requiredFlow <= 0) {
+        return result;
+    }
+
+    Matrix residualCapacity = m_capacityMatrix;
+    Matrix residualCost(m_vertexCount, m_vertexCount, 0);
+
+    for (int i = 0; i < m_vertexCount; ++i) {
+        for (int j = 0; j < m_vertexCount; ++j) {
+            if (m_capacityMatrix(i, j) > 0) {
+                residualCost(i, j) = m_costMatrix(i, j);
+                residualCost(j, i) = -m_costMatrix(i, j);
+            }
+        }
+    }
+
+    while (result.achievedFlow < requiredFlow) {
+        Matrix residualAdjacency(m_vertexCount, m_vertexCount, 0);
+
+        for (int i = 0; i < m_vertexCount; ++i) {
+            for (int j = 0; j < m_vertexCount; ++j) {
+                if (residualCapacity(i, j) > 0) {
+                    residualAdjacency(i, j) = 1;
+                }
+            }
+        }
+
+        auto pathResult = dijkstraNegative(
+            source,
+            sink,
+            residualAdjacency,
+            residualCost
+        );
+
+        result.iterations += pathResult.iterations;
+
+        if (!pathResult.hasPath || pathResult.hasNegativeCycle) {
+            break;
+        }
+
+        int addFlow = requiredFlow - result.achievedFlow;
+
+        for (size_t i = 1; i < pathResult.path.size(); ++i) {
+            int from = pathResult.path[i - 1];
+            int to = pathResult.path[i];
+
+            addFlow = std::min(
+                addFlow,
+                static_cast<int>(residualCapacity(from, to))
+            );
+        }
+
+        if (addFlow <= 0) {
+            break;
+        }
+
+        for (size_t i = 1; i < pathResult.path.size(); ++i) {
+            int from = pathResult.path[i - 1];
+            int to = pathResult.path[i];
+
+            residualCapacity(from, to) -= addFlow;
+            residualCapacity(to, from) += addFlow;
+
+            if (m_capacityMatrix(from, to) > 0) {
+                // идём по исходной дуге
+                result.flowMatrix(from, to) += addFlow;
+                result.totalCost += addFlow * static_cast<int>(m_costMatrix(from, to));
+            } else {
+                // идём по обратной дуге остаточной сети
+                // значит уменьшаем поток по исходной дуге to -> from
+                result.flowMatrix(to, from) -= addFlow;
+                result.totalCost -= addFlow * static_cast<int>(m_costMatrix(to, from));
+            }
+        }
+
+        result.achievedFlow += addFlow;
+    }
+
+    result.success = result.achievedFlow == requiredFlow;
 
     return result;
 }

@@ -37,4 +37,5 @@ private:
     // lab3
     void m_menuCapacityAndCostMatrices();
     void m_menuMaxFlow();
+    void m_menuMinCostFlow();
 };

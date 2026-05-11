@@ -366,13 +366,85 @@ void CLI::m_menuMaxFlow() {
               << result.maxFlow
               << "\n";
 
-    std::cout << "Количество итераций BFS: "
+    std::cout << "Количество итераций: "
               << result.iterations
               << "\n\n";
 
     std::cout << "Матрица потоков:\n";
 
     result.flowMatrix.print();
+}
+
+void CLI::m_menuMinCostFlow() {
+    m_printHeader("Поток минимальной стоимости");
+
+    if (!m_graph->isCapacityMatrixGenerated()) {
+        std::cout << "Сначала сгенерируйте матрицу пропускных способностей.\n";
+        return;
+    }
+
+    if (!m_graph->isCostMatrixGenerated()) {
+        std::cout << "Сначала сгенерируйте матрицу стоимостей.\n";
+        return;
+    }
+
+    int vertexCount = m_graph->getVertexCount();
+
+    std::cout << "Источник:\n";
+    int source = m_readInt("> ", 0, vertexCount - 1);
+
+    std::cout << "Сток:\n";
+    int sink = m_readInt("> ", 0, vertexCount - 1);
+
+    if (source == sink) {
+        std::cout << "Источник и сток должны различаться.\n";
+        return;
+    }
+
+    auto maxFlowResult = m_graph->fordFulkerson(source, sink);
+
+    int requiredFlow = (2 * maxFlowResult.maxFlow) / 3;
+
+    if (requiredFlow <= 0 && maxFlowResult.maxFlow > 0) {
+        requiredFlow = 1;
+    }
+
+    std::cout << "Максимальный поток: "
+              << maxFlowResult.maxFlow
+              << "\n";
+
+    std::cout << "Заданный поток [2/3 * max]: "
+              << requiredFlow
+              << "\n\n";
+
+    auto minCostResult = m_graph->minCostFlow(
+        source,
+        sink,
+        requiredFlow
+    );
+
+    if (!minCostResult.success) {
+        std::cout << "Не удалось построить поток заданной величины.\n";
+        std::cout << "Достигнутый поток: "
+                  << minCostResult.achievedFlow
+                  << "\n";
+        std::cout << "Количество итераций: "
+                << minCostResult.iterations
+                << "\n\n";
+        return;
+    }
+
+    std::cout << "Поток минимальной стоимости найден.\n";
+    std::cout << "Стоимость потока: "
+              << minCostResult.totalCost
+              << "\n";
+
+    std::cout << "Количество итераций: "
+              << minCostResult.iterations
+              << "\n\n";
+
+    std::cout << "Матрица потоков минимальной стоимости:\n";
+    minCostResult.flowMatrix.print();
 }
 
 void CLI::m_printMenu() const {
@@ -388,6 +460,7 @@ void CLI::m_printMenu() const {
         << "8. Алгоритм Дейкстры для отрицательных весов\n"
         << "9. Сгенерировать матрицы пропускных способностей и стоимостей\n"
         << "10. Максимальный поток\n"
+        << "11. Поток минимальной стоимости\n"
         << "0. Выход\n";
 }
 
@@ -404,7 +477,7 @@ void CLI::run() {
     while (true) {
         m_printMenu();
 
-        int choice = m_readInt("> ", 0, 10);
+        int choice = m_readInt("> ", 0, 11);
 
         if (choice == 0) {
             break;
@@ -449,6 +522,10 @@ void CLI::run() {
 
             case 10:
                 m_menuMaxFlow();
+                break;
+
+            case 11:
+                m_menuMinCostFlow();
                 break;
         }
     }
