@@ -4,7 +4,9 @@ GeneratorGraph::GeneratorGraph(int vertexCount)
     : Graph(vertexCount),
       m_rng(std::random_device{}()),
       m_uniformDist(0, 1),
-      m_diameter(0)
+      m_diameter(0),
+      m_capacityMatrix(vertexCount, vertexCount, 0),
+      m_costMatrix(vertexCount, vertexCount, 0)
 {}
 
 double GeneratorGraph::m_sampleWeibull(const WeibullParams& parameters) {
