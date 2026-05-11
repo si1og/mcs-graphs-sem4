@@ -265,6 +265,10 @@ void CLI::m_runDijkstraNegative() {
 
     if (!result.hasPath) {
         std::cout << "Путь не найден.\n";
+        std::cout
+            << "Количество итераций: "
+            << result.iterations
+            << "\n";
         return;
     }
 

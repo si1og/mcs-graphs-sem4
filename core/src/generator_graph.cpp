@@ -322,12 +322,13 @@ std::vector<int> GeneratorGraph::m_restorePath(int s,
 //TODO: обосновать очередь
 // 1) обычная очередь работает менее эффективно, т.к. мы можем сделать несколько лишних циклов, извлекая вершины из очереди
 //    и ища оптимальную (в обычной очереди вершины расположены в порядке добавления в очередь, а не отсортированы по весам)
-//  - заменил на очередь в приоритетами (как собственно написано на слайде)
+//  - заменил на очередь c приоритетами (как написано на слайде)
 //
 // 2) кол-во итераций всегда выводится
 //  - теперь выводится всегда
 //
 // 3) при перегенерации графа вводить число вершин
+//  - поправил
 ShortestPathResult GeneratorGraph::dijkstraNegative(int s, int t) const {
     const double INF = std::numeric_limits<double>::infinity();
 
@@ -339,23 +340,37 @@ ShortestPathResult GeneratorGraph::dijkstraNegative(int s, int t) const {
     std::vector<double> T(m_vertexCount, INF);
     std::vector<int> H(m_vertexCount, -1);
 
-    std::vector<bool> inQ(m_vertexCount, false);
     std::vector<int> relaxCount(m_vertexCount, 0);
 
-    std::queue<int> Q;
+    // { T[v], v }
+    using QueueItem = std::pair<double, int>;
+
+    // очередь с приоритетами
+    // сначала извлекается вершина с минимальным T[v]
+    std::priority_queue<
+        QueueItem,
+        std::vector<QueueItem>,
+        std::greater<QueueItem>
+    > Q;
 
     int iterations = 0;
 
     T[s] = 0;
     H[s] = -1;
 
-    Q.push(s);
-    inQ[s] = true;
+    Q.push({T[s], s});
 
     while (!Q.empty()) {
-        int v = Q.front();
+        double currentDistance = Q.top().first;
+        int v = Q.top().second;
+
         Q.pop();
-        inQ[v] = false;
+
+        // пропускаем старые значения
+        // вершина могла попасть в очередь несколько раз
+        if (currentDistance != T[v]) {
+            continue;
+        }
 
         for (int u = 0; u < m_vertexCount; ++u) {
             ++iterations;
@@ -369,10 +384,8 @@ ShortestPathResult GeneratorGraph::dijkstraNegative(int s, int t) const {
                 T[u] = T[v] + m_weightMatrix(v, u);
                 H[u] = v;
 
-                if (!inQ[u]) {
-                    Q.push(u);
-                    inQ[u] = true;
-                }
+                // добавляем вершину с новой меткой
+                Q.push({T[u], u});
 
                 ++relaxCount[u];
 

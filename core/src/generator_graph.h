@@ -7,6 +7,7 @@
 #include <queue>
 #include <limits>
 #include <algorithm>
+#include <functional>
 
 enum class WeightMode {
     Positive,
