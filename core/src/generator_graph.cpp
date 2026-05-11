@@ -322,7 +322,7 @@ std::vector<int> GeneratorGraph::m_restorePath(int s,
 }
 
 //TODO: обосновать очередь
-// 1) обычная очередь работает менее эффективно, т.к. мы можем сделать несколько лишних циклов, извлекая вершины из очереди
+// 1) обычная очередь работает менее эффективно, т.к. мы можем сделать много лишних циклов, извлекая вершины из очереди
 //    и ища оптимальную (в обычной очереди вершины расположены в порядке добавления в очередь, а не отсортированы по весам)
 //  - заменил на очередь c приоритетами (как написано на слайде)
 //
@@ -482,57 +482,11 @@ bool GeneratorGraph::isCostMatrixGenerated() const {
     return isMatrixInit.cost;
 }
 
-namespace {
-
-int bfsForFlow(const Matrix& residual,
-               int vertexCount,
-               int source,
-               int sink,
-               std::vector<int>& parent,
-               int& iterations) {
+// алгоритм Форда-Фалкерсона
+// реализован через расстановку пометок
+MaxFlowResult GeneratorGraph::fordFulkerson(int source, int sink) const {
     const int INF = std::numeric_limits<int>::max();
 
-    parent.assign(vertexCount, -1);
-    parent[source] = -2;
-
-    std::queue<std::pair<int, int>> q;
-    q.push({source, INF});
-
-    while (!q.empty()) {
-        int v = q.front().first;
-        int flow = q.front().second;
-
-        q.pop();
-
-        for (int u = 0; u < vertexCount; ++u) {
-            ++iterations;
-
-            if (parent[u] == -1 && residual(v, u) > 0) {
-                parent[u] = v;
-
-                int newFlow = std::min(
-                    flow,
-                    static_cast<int>(residual(v, u))
-                );
-
-                if (u == sink) {
-                    return newFlow;
-                }
-
-                q.push({u, newFlow});
-            }
-        }
-    }
-
-    return 0;
-}
-
-}
-
-// алгоритм Форда-Фалкерсона
-// увеличивающий путь ищется поиском в ширину
-// т.е. используется вариант Эдмондса-Карпа
-MaxFlowResult GeneratorGraph::fordFulkerson(int source, int sink) const {
     MaxFlowResult result(m_vertexCount);
 
     if (!isMatrixInit.capacity) {
@@ -545,44 +499,129 @@ MaxFlowResult GeneratorGraph::fordFulkerson(int source, int sink) const {
         return result;
     }
 
-    Matrix residual = m_capacityMatrix;
-    std::vector<int> parent(m_vertexCount, -1);
+    struct Mark {
+        char sign = '+';
+        int parent = -1;
+        int delta = 0;
+    };
 
     while (true) {
-        int flow = bfsForFlow(
-            residual,
-            m_vertexCount,
-            source,
-            sink,
-            parent,
-            result.iterations
-        );
+        // S[v] - вершина получила пометку
+        // N[v] - вершина уже обработана
+        // P[v] - пометка вершины: знак, предок, величина изменения потока
+        std::vector<bool> S(m_vertexCount, false);
+        std::vector<bool> N(m_vertexCount, false);
+        std::vector<Mark> P(m_vertexCount);
 
-        if (flow == 0) {
+        S[source] = true;
+        P[source] = {'+', -1, INF};
+
+        bool expanded = true;
+
+        // расставляем пометки, пока множество S расширяется
+        while (expanded && !S[sink]) {
+            expanded = false;
+
+            for (int v = 0; v < m_vertexCount; ++v) {
+                ++result.iterations;
+
+                if (!S[v] || N[v]) {
+                    continue;
+                }
+
+                // прямые дуги
+                for (int u = 0; u < m_vertexCount; ++u) {
+                    ++result.iterations;
+
+                    if (S[u]) {
+                        continue;
+                    }
+
+                    if (m_capacityMatrix(v, u) <= 0) {
+                        continue;
+                    }
+
+                    int available =
+                        static_cast<int>(m_capacityMatrix(v, u) - result.flowMatrix(v, u));
+
+                    if (available > 0) {
+                        S[u] = true;
+                        P[u] = {
+                            '+',
+                            v,
+                            std::min(P[v].delta, available)
+                        };
+
+                        expanded = true;
+
+                        if (u == sink) {
+                            break;
+                        }
+                    }
+                }
+
+                if (S[sink]) {
+                    break;
+                }
+
+                // обратные дуги
+                for (int u = 0; u < m_vertexCount; ++u) {
+                    ++result.iterations;
+
+                    if (S[u]) {
+                        continue;
+                    }
+
+                    if (result.flowMatrix(u, v) > 0) {
+                        int available =
+                            static_cast<int>(result.flowMatrix(u, v));
+
+                        S[u] = true;
+                        P[u] = {
+                            '-',
+                            v,
+                            std::min(P[v].delta, available)
+                        };
+
+                        expanded = true;
+
+                        if (u == sink) {
+                            break;
+                        }
+                    }
+                }
+
+                N[v] = true;
+
+                if (S[sink]) {
+                    break;
+                }
+            }
+        }
+
+        // если сток не получил пометку, увеличивающих цепей больше нет
+        if (!S[sink]) {
             break;
         }
 
-        result.maxFlow += flow;
-
+        int delta = P[sink].delta;
         int current = sink;
 
+        // изменяем поток по найденной увеличивающей цепи
         while (current != source) {
-            int previous = parent[current];
+            Mark mark = P[current];
+            int previous = mark.parent;
 
-            residual(previous, current) -= flow;
-            residual(current, previous) += flow;
-
-            if (m_capacityMatrix(previous, current) > 0) {
-                // идём по исходной дуге
-                result.flowMatrix(previous, current) += flow;
+            if (mark.sign == '+') {
+                result.flowMatrix(previous, current) += delta;
             } else {
-                // идём по обратной дуге остаточной сети
-                // значит уменьшаем поток по исходной дуге current -> previous
-                result.flowMatrix(current, previous) -= flow;
+                result.flowMatrix(current, previous) -= delta;
             }
 
             current = previous;
         }
+
+        result.maxFlow += delta;
     }
 
     return result;

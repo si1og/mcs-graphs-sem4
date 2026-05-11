@@ -265,15 +265,17 @@ void CLI::m_runDijkstraNegative() {
 
     if (!result.hasPath) {
         std::cout << "Путь не найден.\n";
+
         std::cout
             << "Количество итераций: "
             << result.iterations
             << "\n";
+
         return;
     }
 
     std::string wayString;
-    std::string distanceString;
+    std::string weightsString;
 
     double sum = 0;
 
@@ -294,10 +296,10 @@ void CLI::m_runDijkstraNegative() {
             m_graph->getWeightMatrix()(from, to);
 
         if (i > 1) {
-            distanceString += ", ";
+            weightsString += ", ";
         }
 
-        distanceString +=
+        weightsString +=
             std::to_string(static_cast<int>(weight));
 
         sum += weight;
@@ -313,11 +315,33 @@ void CLI::m_runDijkstraNegative() {
         << ")\n";
 
     std::cout
-        << "Вектор расстояний: ("
-        << distanceString
+        << "Веса дуг маршрута: ("
+        << weightsString
         << "); sum: "
         << sum
         << "\n";
+
+    std::cout
+        << "Вектор расстояний: (";
+
+    for (int i = 0; i < n; ++i) {
+        if (i > 0) {
+            std::cout << ", ";
+        }
+
+        if (result.T[i] ==
+            std::numeric_limits<double>::infinity()) {
+
+            std::cout << "inf";
+
+        } else {
+
+            std::cout
+                << static_cast<int>(result.T[i]);
+        }
+    }
+
+    std::cout << ")\n";
 
     std::cout
         << "Количество итераций: "
