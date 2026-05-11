@@ -1,25 +1,19 @@
 #include "generator_graph.h"
 
-GeneratorGraph::GeneratorGraph(int vertexCount,
-                               double weibullA,
-                               double weibullC,
-                               double weibullY0)
+GeneratorGraph::GeneratorGraph(int vertexCount)
     : Graph(vertexCount),
       m_rng(std::random_device{}()),
       m_uniformDist(0, 1),
-      m_weibullA(weibullA),
-      m_weibullC(weibullC),
-      m_weibullY0(weibullY0),
       m_diameter(0)
 {}
 
-double GeneratorGraph::m_sampleWeibull() {
+double GeneratorGraph::m_sampleWeibull(const WeibullParams& parameters) {
 double r;
 do {
     r = m_uniformDist(m_rng);
 } while (r >= 1);
 
-return m_weibullY0 + m_weibullA * std::pow(-std::log(1 - r), 1 / m_weibullC);
+return parameters.shift + parameters.scale * std::pow(-std::log(1 - r), 1 / parameters.shape);
 }
 
 std::vector<int> GeneratorGraph::m_generateDegreeSequence() {
@@ -29,7 +23,7 @@ std::vector<int> GeneratorGraph::m_generateDegreeSequence() {
     do {
         valid = true;
         for (int i = 0; i < m_vertexCount; ++i) {
-            double raw = m_sampleWeibull();
+            double raw = m_sampleWeibull(constants::graph);
             degrees[i] = static_cast<int>(std::round(raw * (m_vertexCount - 1)));
 
             if (degrees[i] > m_vertexCount - 1 || degrees[i] == 0) {
@@ -148,8 +142,8 @@ void GeneratorGraph::generateWeightMatrix(WeightMode mode) {
             if (i == j) continue;
 
             if (m_adjacencyMatrix(i, j) != 0) {
-                const int WEIGHT_MATRIX_DIST_VALUE = 20;
-                double w = std::round(m_sampleWeibull() * WEIGHT_MATRIX_DIST_VALUE);
+                const int WEIGHT_MATRIX_DIST_VALUE = 10;
+                double w = std::round(m_sampleWeibull(constants::weight ) * WEIGHT_MATRIX_DIST_VALUE);
 
                 switch (mode) {
                     case WeightMode::Positive:

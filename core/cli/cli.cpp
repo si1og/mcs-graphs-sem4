@@ -11,10 +11,7 @@ void CLI::m_generateGraph() {
     );
 
     m_graph = std::make_unique<GeneratorGraph>(
-        m_vertexCount,
-        constants::WEIBULL_SCALE,
-        constants::WEIBULL_SHAPE,
-        constants::WEIBULL_SHIFT
+        m_vertexCount
     );
 
     m_graph->generate();
