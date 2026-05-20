@@ -15,6 +15,7 @@ struct MaxFlowResult {
 
 struct MinCostFlowResult {
     Matrix flowMatrix;
+    Matrix costFlowMatrix;
 
     int requiredFlow = 0;
     int achievedFlow = 0;
@@ -25,5 +26,6 @@ struct MinCostFlowResult {
 
     MinCostFlowResult(int vertexCount)
         : flowMatrix(vertexCount, vertexCount, 0)
+        , costFlowMatrix(vertexCount, vertexCount, 0)
     {}
 };

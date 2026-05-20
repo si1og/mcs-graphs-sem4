@@ -469,6 +469,9 @@ void CLI::m_menuMinCostFlow() {
 
     std::cout << "Матрица потоков минимальной стоимости:\n";
     minCostResult.flowMatrix.print();
+
+    std::cout << "\nМатрица стоимостей минимального потока:\n";
+    minCostResult.costFlowMatrix.print();
 }
 
 void CLI::m_printMenu() const {

@@ -724,5 +724,12 @@ MinCostFlowResult GeneratorGraph::minCostFlow(int source,
 
     result.success = result.achievedFlow == requiredFlow;
 
+    for (int i = 0; i < m_vertexCount; ++i) {
+        for (int j = 0; j < m_vertexCount; ++j) {
+            result.costFlowMatrix(i, j) =
+                m_costMatrix(i, j) * result.flowMatrix(i, j);
+        }
+    }
+
     return result;
 }
