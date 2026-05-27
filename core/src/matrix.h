@@ -20,6 +20,8 @@ public:
     Matrix shimbellMin(const Matrix& other) const;
     Matrix shimbellMax(const Matrix& other) const;
 
+    double determinant() const;
+
     void print(PrintMode mode = PrintMode::Integer) const;
 
 private:
