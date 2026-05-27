@@ -474,6 +474,22 @@ void CLI::m_menuMinCostFlow() {
     minCostResult.costFlowMatrix.print();
 }
 
+void CLI::m_menuSpanningTreesCount() {
+    m_printHeader("Число остовных деревьев");
+
+    auto result = m_graph->countSpanningTreesKirchhoff();
+
+    std::cout << "Матрица Кирхгофа:\n";
+    result.kirchhoffMatrix.print();
+
+    std::cout << "\nАлгебраическое дополнение A11:\n";
+    result.cofactorMatrix.print();
+
+    std::cout << "\nЧисло остовных деревьев: "
+              << result.count
+              << "\n";
+}
+
 void CLI::m_printMenu() const {
     std::cout
         << "\n----- Меню -----\n"
@@ -488,6 +504,7 @@ void CLI::m_printMenu() const {
         << "9. Сгенерировать матрицы пропускных способностей и стоимостей\n"
         << "10. Максимальный поток\n"
         << "11. Поток минимальной стоимости\n"
+        << "12. Число остовных деревьев\n"
         << "0. Выход\n";
 }
 
@@ -504,7 +521,7 @@ void CLI::run() {
     while (true) {
         m_printMenu();
 
-        int choice = m_readInt("> ", 0, 11);
+        int choice = m_readInt("> ", 0, 12);
 
         if (choice == 0) {
             break;
@@ -553,6 +570,10 @@ void CLI::run() {
 
             case 11:
                 m_menuMinCostFlow();
+                break;
+
+            case 12:
+                m_menuSpanningTreesCount();
                 break;
         }
     }

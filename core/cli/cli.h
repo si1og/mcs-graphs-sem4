@@ -38,4 +38,5 @@ private:
     void m_menuCapacityAndCostMatrices();
     void m_menuMaxFlow();
     void m_menuMinCostFlow();
+    void m_menuSpanningTreesCount();
 };

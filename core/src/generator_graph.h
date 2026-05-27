@@ -33,6 +33,23 @@ struct ArticulationPointsResult {
     int iterations = 0;
 };
 
+struct SpanningTreesResult {
+    Matrix kirchhoffMatrix;
+    Matrix cofactorMatrix;
+
+    double cofactorDeterminant = 0;
+    long long count = 0;
+
+    SpanningTreesResult(int vertexCount)
+        : kirchhoffMatrix(vertexCount, vertexCount, 0)
+        , cofactorMatrix(
+              std::max(0, vertexCount - 1),
+              std::max(0, vertexCount - 1),
+              0
+          )
+    {}
+};
+
 class GeneratorGraph : public Graph {
 public:
     GeneratorGraph(int vertexCount);
@@ -51,6 +68,9 @@ public:
     bool hasRoute(int from, int to) const;
     int countRoutes(int from, int to) const;
     void testDistribution();
+
+    // lab4
+    SpanningTreesResult countSpanningTreesKirchhoff() const;
 
     //lab2
     ArticulationPointsResult findArticulationPoints() const;

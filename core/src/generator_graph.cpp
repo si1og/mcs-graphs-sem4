@@ -1,4 +1,5 @@
 #include "generator_graph.h"
+#include <cmath>
 
 GeneratorGraph::GeneratorGraph(int vertexCount)
     : Graph(vertexCount),
@@ -82,6 +83,9 @@ void GeneratorGraph::generate() {
             ++edgesAdded;
         }
     }
+
+    m_syncUndirectedAdjacencyMatrix();
+    isMatrixInit.adjacency = true;
 }
 
 void GeneratorGraph::computeEccentricities() {
@@ -165,6 +169,7 @@ void GeneratorGraph::generateWeightMatrix(WeightMode mode) {
     }
 
     isMatrixInit.weight = true;
+    m_syncUndirectedWeightMatrix();
 }
 
 Matrix GeneratorGraph::shimbell(int steps, bool findMin) const {
@@ -223,6 +228,45 @@ int GeneratorGraph::countRoutes(int from, int to) const {
         if (k < m_vertexCount - 1) Ak = Ak * m_adjacencyMatrix;
     }
     return total;
+}
+
+SpanningTreesResult GeneratorGraph::countSpanningTreesKirchhoff() const {
+    SpanningTreesResult result(m_vertexCount);
+    const Matrix& adjacency = m_undirectedAdjacencyMatrix;
+
+    for (int i = 0; i < m_vertexCount; ++i) {
+        int degree = 0;
+
+        for (int j = 0; j < m_vertexCount; ++j) {
+            if (i == j) {
+                continue;
+            }
+
+            if (adjacency(i, j) != 0) {
+                ++degree;
+                result.kirchhoffMatrix(i, j) = -1;
+            }
+        }
+
+        result.kirchhoffMatrix(i, i) = degree;
+    }
+
+    if (m_vertexCount <= 1) {
+        result.count = 1;
+        return result;
+    }
+
+    for (int i = 1; i < m_vertexCount; ++i) {
+        for (int j = 1; j < m_vertexCount; ++j) {
+            result.cofactorMatrix(i - 1, j - 1) =
+                result.kirchhoffMatrix(i, j);
+        }
+    }
+
+    result.cofactorDeterminant = result.cofactorMatrix.determinant();
+    result.count = std::llround(result.cofactorDeterminant);
+
+    return result;
 }
 
 
