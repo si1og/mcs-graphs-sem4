@@ -485,9 +485,47 @@ void CLI::m_menuSpanningTreesCount() {
     std::cout << "\nАлгебраическое дополнение A11:\n";
     result.cofactorMatrix.print();
 
+    std::cout << "\nОпределитель A11: "
+              << result.cofactorDeterminant
+              << "\n";
+
     std::cout << "\nЧисло остовных деревьев: "
               << result.count
               << "\n";
+}
+
+void CLI::m_menuKruskalMinimumSpanningTree() {
+    m_printHeader("Минимальный остов: алгоритм Краскала");
+
+    if (!m_graph->isMatrixInit.weight) {
+        std::cout << "Сначала сгенерируйте весовую матрицу.\n";
+        return;
+    }
+
+    auto result = m_graph->kruskalMinimumSpanningTree();
+
+    if (!result.success) {
+        std::cout << "Не удалось построить остов: граф несвязный.\n";
+        return;
+    }
+
+    std::cout << "Рёбра минимального остова:\n";
+
+    for (const auto& edge : result.edges) {
+        std::cout << edge.from
+                  << " -- "
+                  << edge.to
+                  << " вес: "
+                  << edge.weight
+                  << "\n";
+    }
+
+    std::cout << "\nВес минимального остова: "
+              << result.totalWeight
+              << "\n\n";
+
+    std::cout << "Матрица весов минимального остова:\n";
+    result.spanningTreeMatrix.print();
 }
 
 void CLI::m_printMenu() const {
@@ -505,6 +543,7 @@ void CLI::m_printMenu() const {
         << "10. Максимальный поток\n"
         << "11. Поток минимальной стоимости\n"
         << "12. Число остовных деревьев\n"
+        << "13. Минимальный остов: алгоритм Краскала\n"
         << "0. Выход\n";
 }
 
@@ -521,7 +560,7 @@ void CLI::run() {
     while (true) {
         m_printMenu();
 
-        int choice = m_readInt("> ", 0, 12);
+        int choice = m_readInt("> ", 0, 13);
 
         if (choice == 0) {
             break;
@@ -574,6 +613,10 @@ void CLI::run() {
 
             case 12:
                 m_menuSpanningTreesCount();
+                break;
+
+            case 13:
+                m_menuKruskalMinimumSpanningTree();
                 break;
         }
     }

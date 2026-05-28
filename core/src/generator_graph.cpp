@@ -269,6 +269,99 @@ SpanningTreesResult GeneratorGraph::countSpanningTreesKirchhoff() const {
     return result;
 }
 
+KruskalResult GeneratorGraph::kruskalMinimumSpanningTree() const {
+    KruskalResult result(m_vertexCount);
+
+    for (int i = 0; i < m_vertexCount; ++i) {
+        result.spanningTreeMatrix(i, i) = 0;
+    }
+
+    std::vector<WeightedGraphEdge> edges;
+
+    for (int i = 0; i < m_vertexCount; ++i) {
+        for (int j = i + 1; j < m_vertexCount; ++j) {
+            if (m_undirectedAdjacencyMatrix(i, j) != 0 &&
+                !std::isinf(m_undirectedWeightMatrix(i, j))) {
+                edges.push_back({
+                    i,
+                    j,
+                    m_undirectedWeightMatrix(i, j)
+                });
+            }
+        }
+    }
+
+    std::sort(
+        edges.begin(),
+        edges.end(),
+        [](const WeightedGraphEdge& lhs, const WeightedGraphEdge& rhs) {
+            if (lhs.weight != rhs.weight) {
+                return lhs.weight < rhs.weight;
+            }
+
+            if (lhs.from != rhs.from) {
+                return lhs.from < rhs.from;
+            }
+
+            return lhs.to < rhs.to;
+        }
+    );
+
+    std::vector<int> parent(m_vertexCount);
+    std::vector<int> rank(m_vertexCount, 0);
+
+    for (int i = 0; i < m_vertexCount; ++i) {
+        parent[i] = i;
+    }
+
+    std::function<int(int)> findSet = [&](int vertex) {
+        if (parent[vertex] != vertex) {
+            parent[vertex] = findSet(parent[vertex]);
+        }
+
+        return parent[vertex];
+    };
+
+    auto unionSets = [&](int first, int second) {
+        first = findSet(first);
+        second = findSet(second);
+
+        if (first == second) {
+            return false;
+        }
+
+        if (rank[first] < rank[second]) {
+            std::swap(first, second);
+        }
+
+        parent[second] = first;
+
+        if (rank[first] == rank[second]) {
+            ++rank[first];
+        }
+
+        return true;
+    };
+
+    for (const auto& edge : edges) {
+        if (unionSets(edge.from, edge.to)) {
+            result.edges.push_back(edge);
+            result.spanningTreeMatrix(edge.from, edge.to) = edge.weight;
+            result.spanningTreeMatrix(edge.to, edge.from) = edge.weight;
+            result.totalWeight += edge.weight;
+
+            if (static_cast<int>(result.edges.size()) == m_vertexCount - 1) {
+                break;
+            }
+        }
+    }
+
+    result.success =
+        static_cast<int>(result.edges.size()) == m_vertexCount - 1;
+
+    return result;
+}
+
 
 void GeneratorGraph::m_dfsArticulation(int v,
                                         int parent,

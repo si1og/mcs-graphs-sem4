@@ -50,6 +50,28 @@ struct SpanningTreesResult {
     {}
 };
 
+struct WeightedGraphEdge {
+    int from = 0;
+    int to = 0;
+    double weight = 0;
+};
+
+struct KruskalResult {
+    std::vector<WeightedGraphEdge> edges;
+    Matrix spanningTreeMatrix;
+
+    double totalWeight = 0;
+    bool success = false;
+
+    KruskalResult(int vertexCount)
+        : spanningTreeMatrix(
+              vertexCount,
+              vertexCount,
+              std::numeric_limits<double>::infinity()
+          )
+    {}
+};
+
 class GeneratorGraph : public Graph {
 public:
     GeneratorGraph(int vertexCount);
@@ -71,6 +93,7 @@ public:
 
     // lab4
     SpanningTreesResult countSpanningTreesKirchhoff() const;
+    KruskalResult kruskalMinimumSpanningTree() const;
 
     //lab2
     ArticulationPointsResult findArticulationPoints() const;

@@ -39,4 +39,5 @@ private:
     void m_menuMaxFlow();
     void m_menuMinCostFlow();
     void m_menuSpanningTreesCount();
+    void m_menuKruskalMinimumSpanningTree();
 };
