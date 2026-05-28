@@ -1,5 +1,31 @@
 #include "generator_graph.h"
 #include <cmath>
+#include <set>
+
+namespace {
+bool matricesEqual(const Matrix& lhs, const Matrix& rhs) {
+    if (lhs.rows() != rhs.rows() || lhs.cols() != rhs.cols()) {
+        return false;
+    }
+
+    for (int i = 0; i < lhs.rows(); ++i) {
+        for (int j = 0; j < lhs.cols(); ++j) {
+            const double left = lhs(i, j);
+            const double right = rhs(i, j);
+
+            if (std::isinf(left) || std::isinf(right)) {
+                if (!(std::isinf(left) && std::isinf(right))) {
+                    return false;
+                }
+            } else if (std::abs(left - right) > 1e-9) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+}
 
 GeneratorGraph::GeneratorGraph(int vertexCount)
     : Graph(vertexCount),
@@ -229,139 +255,6 @@ int GeneratorGraph::countRoutes(int from, int to) const {
     }
     return total;
 }
-
-SpanningTreesResult GeneratorGraph::countSpanningTreesKirchhoff() const {
-    SpanningTreesResult result(m_vertexCount);
-    const Matrix& adjacency = m_undirectedAdjacencyMatrix;
-
-    for (int i = 0; i < m_vertexCount; ++i) {
-        int degree = 0;
-
-        for (int j = 0; j < m_vertexCount; ++j) {
-            if (i == j) {
-                continue;
-            }
-
-            if (adjacency(i, j) != 0) {
-                ++degree;
-                result.kirchhoffMatrix(i, j) = -1;
-            }
-        }
-
-        result.kirchhoffMatrix(i, i) = degree;
-    }
-
-    if (m_vertexCount <= 1) {
-        result.count = 1;
-        return result;
-    }
-
-    for (int i = 1; i < m_vertexCount; ++i) {
-        for (int j = 1; j < m_vertexCount; ++j) {
-            result.cofactorMatrix(i - 1, j - 1) =
-                result.kirchhoffMatrix(i, j);
-        }
-    }
-
-    result.cofactorDeterminant = result.cofactorMatrix.determinant();
-    result.count = std::llround(result.cofactorDeterminant);
-
-    return result;
-}
-
-KruskalResult GeneratorGraph::kruskalMinimumSpanningTree() const {
-    KruskalResult result(m_vertexCount);
-
-    for (int i = 0; i < m_vertexCount; ++i) {
-        result.spanningTreeMatrix(i, i) = 0;
-    }
-
-    std::vector<WeightedGraphEdge> edges;
-
-    for (int i = 0; i < m_vertexCount; ++i) {
-        for (int j = i + 1; j < m_vertexCount; ++j) {
-            if (m_undirectedAdjacencyMatrix(i, j) != 0 &&
-                !std::isinf(m_undirectedWeightMatrix(i, j))) {
-                edges.push_back({
-                    i,
-                    j,
-                    m_undirectedWeightMatrix(i, j)
-                });
-            }
-        }
-    }
-
-    std::sort(
-        edges.begin(),
-        edges.end(),
-        [](const WeightedGraphEdge& lhs, const WeightedGraphEdge& rhs) {
-            if (lhs.weight != rhs.weight) {
-                return lhs.weight < rhs.weight;
-            }
-
-            if (lhs.from != rhs.from) {
-                return lhs.from < rhs.from;
-            }
-
-            return lhs.to < rhs.to;
-        }
-    );
-
-    std::vector<int> parent(m_vertexCount);
-    std::vector<int> rank(m_vertexCount, 0);
-
-    for (int i = 0; i < m_vertexCount; ++i) {
-        parent[i] = i;
-    }
-
-    std::function<int(int)> findSet = [&](int vertex) {
-        if (parent[vertex] != vertex) {
-            parent[vertex] = findSet(parent[vertex]);
-        }
-
-        return parent[vertex];
-    };
-
-    auto unionSets = [&](int first, int second) {
-        first = findSet(first);
-        second = findSet(second);
-
-        if (first == second) {
-            return false;
-        }
-
-        if (rank[first] < rank[second]) {
-            std::swap(first, second);
-        }
-
-        parent[second] = first;
-
-        if (rank[first] == rank[second]) {
-            ++rank[first];
-        }
-
-        return true;
-    };
-
-    for (const auto& edge : edges) {
-        if (unionSets(edge.from, edge.to)) {
-            result.edges.push_back(edge);
-            result.spanningTreeMatrix(edge.from, edge.to) = edge.weight;
-            result.spanningTreeMatrix(edge.to, edge.from) = edge.weight;
-            result.totalWeight += edge.weight;
-
-            if (static_cast<int>(result.edges.size()) == m_vertexCount - 1) {
-                break;
-            }
-        }
-    }
-
-    result.success =
-        static_cast<int>(result.edges.size()) == m_vertexCount - 1;
-
-    return result;
-}
-
 
 void GeneratorGraph::m_dfsArticulation(int v,
                                         int parent,
@@ -867,6 +760,234 @@ MinCostFlowResult GeneratorGraph::minCostFlow(int source,
                 m_costMatrix(i, j) * result.flowMatrix(i, j);
         }
     }
+
+    return result;
+}
+
+// lab4
+SpanningTreesResult GeneratorGraph::countSpanningTreesKirchhoff() const {
+    SpanningTreesResult result(m_vertexCount);
+    const Matrix& adjacency = m_undirectedAdjacencyMatrix;
+
+    for (int i = 0; i < m_vertexCount; ++i) {
+        int degree = 0;
+
+        for (int j = 0; j < m_vertexCount; ++j) {
+            if (i == j) {
+                continue;
+            }
+
+            if (adjacency(i, j) != 0) {
+                ++degree;
+                result.kirchhoffMatrix(i, j) = -1;
+            }
+        }
+
+        result.kirchhoffMatrix(i, i) = degree;
+    }
+
+    if (m_vertexCount <= 1) {
+        result.count = 1;
+        return result;
+    }
+
+    for (int i = 1; i < m_vertexCount; ++i) {
+        for (int j = 1; j < m_vertexCount; ++j) {
+            result.cofactorMatrix(i - 1, j - 1) =
+                result.kirchhoffMatrix(i, j);
+        }
+    }
+
+    result.cofactorDeterminant = result.cofactorMatrix.determinant();
+    result.count = std::llround(result.cofactorDeterminant);
+
+    return result;
+}
+
+KruskalResult GeneratorGraph::kruskalMinimumSpanningTree() const {
+    KruskalResult result(m_vertexCount);
+
+    for (int i = 0; i < m_vertexCount; ++i) {
+        result.spanningTreeMatrix(i, i) = 0;
+        result.decodedTreeMatrix(i, i) = 0;
+    }
+
+    // берем все ребра графа
+    std::vector<WeightedGraphEdge> edges;
+
+    for (int i = 0; i < m_vertexCount; ++i) {
+        for (int j = i + 1; j < m_vertexCount; ++j) {
+            if (m_undirectedAdjacencyMatrix(i, j) != 0 &&
+                !std::isinf(m_undirectedWeightMatrix(i, j))) {
+                edges.push_back({
+                    i,
+                    j,
+                    m_undirectedWeightMatrix(i, j)
+                });
+            }
+        }
+    }
+
+    // сортируем рёбра по возрастанию веса
+    std::sort(
+        edges.begin(),
+        edges.end(),
+        [](const WeightedGraphEdge& lhs, const WeightedGraphEdge& rhs) {
+            if (lhs.weight != rhs.weight) {
+                return lhs.weight < rhs.weight;
+            }
+
+            if (lhs.from != rhs.from) {
+                return lhs.from < rhs.from;
+            }
+
+            return lhs.to < rhs.to;
+        }
+    );
+
+    std::vector<int> parent(m_vertexCount);
+    std::vector<int> rank(m_vertexCount, 0);
+
+    for (int i = 0; i < m_vertexCount; ++i) {
+        parent[i] = i;
+    }
+
+    std::function<int(int)> findSet = [&](int vertex) {
+        if (parent[vertex] != vertex) {
+            parent[vertex] = findSet(parent[vertex]);
+        }
+
+        return parent[vertex];
+    };
+
+    auto unionSets = [&](int first, int second) {
+        first = findSet(first);
+        second = findSet(second);
+
+        if (first == second) {
+            return false;
+        }
+
+        if (rank[first] < rank[second]) {
+            std::swap(first, second);
+        }
+
+        parent[second] = first;
+
+        if (rank[first] == rank[second]) {
+            ++rank[first];
+        }
+
+        // если ребро соединяет вершины из разных множеств, его можно взять
+        return true;
+    };
+
+    // идем по ребрам от самого дешевого к самому дорогому
+    // изначально каждая вершина в своем множестве
+    for (const auto& edge : edges) {
+        if (unionSets(edge.from, edge.to)) {
+            // добавляем ребро в остов, если оно не образует цикл
+            result.edges.push_back(edge);
+            result.spanningTreeMatrix(edge.from, edge.to) = edge.weight;
+            result.spanningTreeMatrix(edge.to, edge.from) = edge.weight;
+            result.totalWeight += edge.weight;
+
+            // останавливаемся, когда выбрали n - 1 ребро
+            if (static_cast<int>(result.edges.size()) == m_vertexCount - 1) {
+                break;
+            }
+        }
+    }
+
+    result.success =
+        static_cast<int>(result.edges.size()) == m_vertexCount - 1;
+
+    if (!result.success) {
+        return result;
+    }
+
+    // кодируем полученный остов кодом Прюфера с сохранением весов рёбер
+    std::vector<std::set<int>> adjacency(m_vertexCount);
+
+    for (const auto& edge : result.edges) {
+        adjacency[edge.from].insert(edge.to);
+        adjacency[edge.to].insert(edge.from);
+    }
+
+    for (int step = 0; step < m_vertexCount - 1; ++step) {
+        int leaf = -1;
+
+        // на каждом шаге берём лист с минимальным номером
+        for (int vertex = 0; vertex < m_vertexCount; ++vertex) {
+            if (adjacency[vertex].size() == 1) {
+                leaf = vertex;
+                break;
+            }
+        }
+
+        if (leaf == -1) {
+            break;
+        }
+
+        const int neighbor = *adjacency[leaf].begin();
+        // в код записываем соседа листа, а вес храним в параллельном массиве
+        result.pruferCode.push_back(neighbor);
+        result.pruferWeights.push_back(result.spanningTreeMatrix(leaf, neighbor));
+
+        // удаляем лист из текущего дерева
+        adjacency[neighbor].erase(leaf);
+        adjacency[leaf].clear();
+    }
+
+    // декодируем код Прюфера обратно в матрицу весов остова
+    std::vector<int> unusedVertices(m_vertexCount);
+
+    for (int i = 0; i < m_vertexCount; ++i) {
+        unusedVertices[i] = i;
+    }
+
+    const int steps = std::min(
+        {
+            m_vertexCount - 1,
+            static_cast<int>(result.pruferCode.size()),
+            static_cast<int>(result.pruferWeights.size())
+        }
+    );
+
+    for (int i = 0; i < steps; ++i) {
+        std::set<int> remainingCode;
+
+        // вершины из оставшегося суффикса кода пока не могут быть листом
+        for (int j = i; j < static_cast<int>(result.pruferCode.size()); ++j) {
+            remainingCode.insert(result.pruferCode[j]);
+        }
+
+        // выбираем минимальную вершину, которой нет в оставшемся коде
+        auto leafIt = std::find_if(
+            unusedVertices.begin(),
+            unusedVertices.end(),
+            [&](int vertex) {
+                return remainingCode.find(vertex) == remainingCode.end();
+            }
+        );
+
+        if (leafIt == unusedVertices.end()) {
+            break;
+        }
+
+        const int leaf = *leafIt;
+        const int neighbor = result.pruferCode[i];
+        const double weight = result.pruferWeights[i];
+
+        // восстанавливаем ребро с тем же весом, который был сохранён при кодировании
+        result.decodedTreeMatrix(leaf, neighbor) = weight;
+        result.decodedTreeMatrix(neighbor, leaf) = weight;
+
+        unusedVertices.erase(leafIt);
+    }
+
+    result.pruferRoundTripSuccess =
+        matricesEqual(result.spanningTreeMatrix, result.decodedTreeMatrix);
 
     return result;
 }

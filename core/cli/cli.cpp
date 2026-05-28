@@ -474,6 +474,7 @@ void CLI::m_menuMinCostFlow() {
     minCostResult.costFlowMatrix.print();
 }
 
+// lab4
 void CLI::m_menuSpanningTreesCount() {
     m_printHeader("Число остовных деревьев");
 
@@ -526,6 +527,35 @@ void CLI::m_menuKruskalMinimumSpanningTree() {
 
     std::cout << "Матрица весов минимального остова:\n";
     result.spanningTreeMatrix.print();
+
+    std::cout << "\nКод Прюфера: [";
+    for (size_t i = 0; i < result.pruferCode.size(); ++i) {
+        std::cout << result.pruferCode[i];
+
+        if (i + 1 < result.pruferCode.size()) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]\n";
+
+    std::cout << "Веса кода Прюфера: [";
+    for (size_t i = 0; i < result.pruferWeights.size(); ++i) {
+        std::cout << result.pruferWeights[i];
+
+        if (i + 1 < result.pruferWeights.size()) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]\n\n";
+
+    std::cout << "Матрица весов декодированного остова:\n";
+    result.decodedTreeMatrix.print();
+
+    std::cout << "\nПроверка декодирования: "
+              << (result.pruferRoundTripSuccess
+                  ? "остов совпадает"
+                  : "остов не совпадает")
+              << "\n";
 }
 
 void CLI::m_printMenu() const {

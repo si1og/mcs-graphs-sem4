@@ -33,6 +33,7 @@ struct ArticulationPointsResult {
     int iterations = 0;
 };
 
+// lab4
 struct SpanningTreesResult {
     Matrix kirchhoffMatrix;
     Matrix cofactorMatrix;
@@ -58,13 +59,22 @@ struct WeightedGraphEdge {
 
 struct KruskalResult {
     std::vector<WeightedGraphEdge> edges;
+    std::vector<int> pruferCode;
+    std::vector<double> pruferWeights;
     Matrix spanningTreeMatrix;
+    Matrix decodedTreeMatrix;
 
     double totalWeight = 0;
     bool success = false;
+    bool pruferRoundTripSuccess = false;
 
     KruskalResult(int vertexCount)
         : spanningTreeMatrix(
+              vertexCount,
+              vertexCount,
+              std::numeric_limits<double>::infinity()
+          )
+        , decodedTreeMatrix(
               vertexCount,
               vertexCount,
               std::numeric_limits<double>::infinity()
@@ -90,10 +100,6 @@ public:
     bool hasRoute(int from, int to) const;
     int countRoutes(int from, int to) const;
     void testDistribution();
-
-    // lab4
-    SpanningTreesResult countSpanningTreesKirchhoff() const;
-    KruskalResult kruskalMinimumSpanningTree() const;
 
     //lab2
     ArticulationPointsResult findArticulationPoints() const;
@@ -123,6 +129,10 @@ public:
         int sink,
         int requiredFlow
     ) const;
+
+    // lab4
+    SpanningTreesResult countSpanningTreesKirchhoff() const;
+    KruskalResult kruskalMinimumSpanningTree() const;
 
 private:
     std::mt19937 m_rng;

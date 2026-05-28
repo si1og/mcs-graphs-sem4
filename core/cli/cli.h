@@ -38,6 +38,8 @@ private:
     void m_menuCapacityAndCostMatrices();
     void m_menuMaxFlow();
     void m_menuMinCostFlow();
+
+    // lab4
     void m_menuSpanningTreesCount();
     void m_menuKruskalMinimumSpanningTree();
 };
