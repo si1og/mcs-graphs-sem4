@@ -486,10 +486,6 @@ void CLI::m_menuSpanningTreesCount() {
     std::cout << "\nАлгебраическое дополнение A11:\n";
     result.cofactorMatrix.print();
 
-    std::cout << "\nОпределитель A11: "
-              << result.cofactorDeterminant
-              << "\n";
-
     std::cout << "\nЧисло остовных деревьев: "
               << result.count
               << "\n";
@@ -528,25 +524,25 @@ void CLI::m_menuKruskalMinimumSpanningTree() {
     std::cout << "Матрица весов минимального остова:\n";
     result.spanningTreeMatrix.print();
 
-    std::cout << "\nКод Прюфера: [";
+    std::cout << "\nКод Прюфера: ";
     for (size_t i = 0; i < result.pruferCode.size(); ++i) {
-        std::cout << result.pruferCode[i];
+        std::cout << result.pruferCode[i].vertex;
 
         if (i + 1 < result.pruferCode.size()) {
             std::cout << ", ";
         }
     }
-    std::cout << "]\n";
+    std::cout << "\n";
 
-    std::cout << "Веса кода Прюфера: [";
-    for (size_t i = 0; i < result.pruferWeights.size(); ++i) {
-        std::cout << result.pruferWeights[i];
+    std::cout << "Веса кода Прюфера: ";
+    for (size_t i = 0; i < result.pruferCode.size(); ++i) {
+        std::cout << result.pruferCode[i].weight;
 
-        if (i + 1 < result.pruferWeights.size()) {
+        if (i + 1 < result.pruferCode.size()) {
             std::cout << ", ";
         }
     }
-    std::cout << "]\n\n";
+    std::cout << "\n\n";
 
     std::cout << "Матрица весов декодированного остова:\n";
     result.decodedTreeMatrix.print();
@@ -556,6 +552,57 @@ void CLI::m_menuKruskalMinimumSpanningTree() {
                   ? "остов совпадает"
                   : "остов не совпадает")
               << "\n";
+}
+
+void CLI::m_menuEdmondsBlossom() {
+    m_printHeader("Алгоритм Эдмондса: максимальное независимое множество рёбер");
+
+    std::cout << "Где искать:\n"
+              << "  1 — исходный граф\n"
+              << "  2 — минимальный остов\n";
+
+    int target = m_readInt("> ", 1, 2);
+
+    if (target == 2 && !m_graph->isMatrixInit.weight) {
+        std::cout << "Сначала сгенерируйте весовую матрицу "
+                  << "для построения минимального остова.\n";
+        return;
+    }
+
+    auto result = (target == 1)
+        ? m_graph->edmondsBlossomInOriginalGraph()
+        : m_graph->edmondsBlossomInMinimumSpanningTree();
+
+    if (!result.success) {
+        std::cout << "Не удалось построить множество рёбер.\n";
+        return;
+    }
+
+    std::cout << "Размер множества: "
+              << result.edges.size()
+              << "\n";
+
+    std::cout << "Рёбра:\n";
+
+    if (result.edges.empty()) {
+        std::cout << "  нет рёбер\n";
+    } else {
+        for (const auto& edge : result.edges) {
+            std::cout << edge.from
+                      << " -- "
+                      << edge.to;
+
+            if (result.hasWeights) {
+                std::cout << " вес: "
+                          << edge.weight;
+            }
+
+            std::cout << "\n";
+        }
+    }
+
+    std::cout << "\nМатрица независимого множества рёбер:\n";
+    result.edgeMatrix.print();
 }
 
 void CLI::m_printMenu() const {
@@ -574,6 +621,7 @@ void CLI::m_printMenu() const {
         << "11. Поток минимальной стоимости\n"
         << "12. Число остовных деревьев\n"
         << "13. Минимальный остов: алгоритм Краскала\n"
+        << "14. Алгоритм Эдмондса: максимальное независимое множество рёбер\n"
         << "0. Выход\n";
 }
 
@@ -590,7 +638,7 @@ void CLI::run() {
     while (true) {
         m_printMenu();
 
-        int choice = m_readInt("> ", 0, 13);
+        int choice = m_readInt("> ", 0, 14);
 
         if (choice == 0) {
             break;
@@ -647,6 +695,10 @@ void CLI::run() {
 
             case 13:
                 m_menuKruskalMinimumSpanningTree();
+                break;
+
+            case 14:
+                m_menuEdmondsBlossom();
                 break;
         }
     }

@@ -42,4 +42,5 @@ private:
     // lab4
     void m_menuSpanningTreesCount();
     void m_menuKruskalMinimumSpanningTree();
+    void m_menuEdmondsBlossom();
 };

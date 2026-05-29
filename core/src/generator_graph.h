@@ -57,10 +57,14 @@ struct WeightedGraphEdge {
     double weight = 0;
 };
 
+struct PruferCodeItem {
+    int vertex = 0;
+    double weight = 0;
+};
+
 struct KruskalResult {
     std::vector<WeightedGraphEdge> edges;
-    std::vector<int> pruferCode;
-    std::vector<double> pruferWeights;
+    std::vector<PruferCodeItem> pruferCode;
     Matrix spanningTreeMatrix;
     Matrix decodedTreeMatrix;
 
@@ -79,6 +83,18 @@ struct KruskalResult {
               vertexCount,
               std::numeric_limits<double>::infinity()
           )
+    {}
+};
+
+struct EdmondsBlossomResult {
+    std::vector<WeightedGraphEdge> edges;
+    Matrix edgeMatrix;
+
+    bool success = true;
+    bool hasWeights = false;
+
+    EdmondsBlossomResult(int vertexCount)
+        : edgeMatrix(vertexCount, vertexCount, 0)
     {}
 };
 
@@ -133,6 +149,8 @@ public:
     // lab4
     SpanningTreesResult countSpanningTreesKirchhoff() const;
     KruskalResult kruskalMinimumSpanningTree() const;
+    EdmondsBlossomResult edmondsBlossomInOriginalGraph() const;
+    EdmondsBlossomResult edmondsBlossomInMinimumSpanningTree() const;
 
 private:
     std::mt19937 m_rng;
@@ -160,4 +178,17 @@ private:
     // lab3
     Matrix m_capacityMatrix;
     Matrix m_costMatrix;
+
+    // lab4
+    EdmondsBlossomResult m_edmondsBlossom(
+        const Matrix& adjacency,
+        const Matrix& weights,
+        bool hasWeights
+    ) const;
+    std::vector<PruferCodeItem> m_encodePruferCode(
+        const std::vector<WeightedGraphEdge>& treeEdges
+    ) const;
+    Matrix m_decodePruferCode(
+        const std::vector<PruferCodeItem>& code
+    ) const;
 };

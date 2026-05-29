@@ -883,7 +883,7 @@ KruskalResult GeneratorGraph::kruskalMinimumSpanningTree() const {
     };
 
     // идем по ребрам от самого дешевого к самому дорогому
-    // изначально каждая вершина в своем множестве
+    // изначально каждая вершина в своем множестве [сверху как раз сделаны ф. поиска и пересечения «множеств»]
     for (const auto& edge : edges) {
         if (unionSets(edge.from, edge.to)) {
             // добавляем ребро в остов, если оно не образует цикл
@@ -906,12 +906,24 @@ KruskalResult GeneratorGraph::kruskalMinimumSpanningTree() const {
         return result;
     }
 
-    // кодируем полученный остов кодом Прюфера с сохранением весов рёбер
-    std::vector<std::set<int>> adjacency(m_vertexCount);
+    result.pruferCode = m_encodePruferCode(result.edges);
+    result.decodedTreeMatrix = m_decodePruferCode(result.pruferCode);
+    result.pruferRoundTripSuccess =
+        matricesEqual(result.spanningTreeMatrix, result.decodedTreeMatrix);
 
-    for (const auto& edge : result.edges) {
-        adjacency[edge.from].insert(edge.to);
-        adjacency[edge.to].insert(edge.from);
+    return result;
+}
+
+std::vector<PruferCodeItem> GeneratorGraph::m_encodePruferCode(
+    const std::vector<WeightedGraphEdge>& treeEdges
+) const {
+    // кодируем полученный остов кодом Прюфера с сохранением весов рёбер
+    std::vector<PruferCodeItem> code;
+    std::vector<std::set<std::pair<int, double>>> adjacency(m_vertexCount);
+
+    for (const auto& edge : treeEdges) {
+        adjacency[edge.from].insert({edge.to, edge.weight});
+        adjacency[edge.to].insert({edge.from, edge.weight});
     }
 
     for (int step = 0; step < m_vertexCount - 1; ++step) {
@@ -929,37 +941,44 @@ KruskalResult GeneratorGraph::kruskalMinimumSpanningTree() const {
             break;
         }
 
-        const int neighbor = *adjacency[leaf].begin();
-        // в код записываем соседа листа, а вес храним в параллельном массиве
-        result.pruferCode.push_back(neighbor);
-        result.pruferWeights.push_back(result.spanningTreeMatrix(leaf, neighbor));
+        const auto [neighbor, weight] = *adjacency[leaf].begin();
+        // в код записываем соседа листа, а рядом сохраняем вес удаляемого ребра
+        code.push_back({neighbor, weight});
 
         // удаляем лист из текущего дерева
-        adjacency[neighbor].erase(leaf);
+        adjacency[neighbor].erase({leaf, weight});
         adjacency[leaf].clear();
     }
 
+    return code;
+}
+
+Matrix GeneratorGraph::m_decodePruferCode(
+    const std::vector<PruferCodeItem>& code
+) const {
     // декодируем код Прюфера обратно в матрицу весов остова
+    Matrix decodedTreeMatrix(
+        m_vertexCount,
+        m_vertexCount,
+        std::numeric_limits<double>::infinity()
+    );
     std::vector<int> unusedVertices(m_vertexCount);
 
     for (int i = 0; i < m_vertexCount; ++i) {
+        decodedTreeMatrix(i, i) = 0;
         unusedVertices[i] = i;
     }
 
     const int steps = std::min(
-        {
-            m_vertexCount - 1,
-            static_cast<int>(result.pruferCode.size()),
-            static_cast<int>(result.pruferWeights.size())
-        }
+        m_vertexCount - 1,
+        static_cast<int>(code.size())
     );
 
     for (int i = 0; i < steps; ++i) {
         std::set<int> remainingCode;
 
-        // вершины из оставшегося суффикса кода пока не могут быть листом
-        for (int j = i; j < static_cast<int>(result.pruferCode.size()); ++j) {
-            remainingCode.insert(result.pruferCode[j]);
+        for (int j = i; j < static_cast<int>(code.size()); ++j) {
+            remainingCode.insert(code[j].vertex);
         }
 
         // выбираем минимальную вершину, которой нет в оставшемся коде
@@ -976,18 +995,257 @@ KruskalResult GeneratorGraph::kruskalMinimumSpanningTree() const {
         }
 
         const int leaf = *leafIt;
-        const int neighbor = result.pruferCode[i];
-        const double weight = result.pruferWeights[i];
+        const int neighbor = code[i].vertex;
+        const double weight = code[i].weight;
 
         // восстанавливаем ребро с тем же весом, который был сохранён при кодировании
-        result.decodedTreeMatrix(leaf, neighbor) = weight;
-        result.decodedTreeMatrix(neighbor, leaf) = weight;
+        decodedTreeMatrix(leaf, neighbor) = weight;
+        decodedTreeMatrix(neighbor, leaf) = weight;
 
         unusedVertices.erase(leafIt);
     }
 
-    result.pruferRoundTripSuccess =
-        matricesEqual(result.spanningTreeMatrix, result.decodedTreeMatrix);
+    return decodedTreeMatrix;
+}
+
+EdmondsBlossomResult
+GeneratorGraph::edmondsBlossomInOriginalGraph() const {
+    const Matrix& weights = isMatrixInit.weight
+        ? m_undirectedWeightMatrix
+        : m_undirectedAdjacencyMatrix;
+
+    return m_edmondsBlossom(
+        m_undirectedAdjacencyMatrix,
+        weights,
+        isMatrixInit.weight
+    );
+}
+
+EdmondsBlossomResult
+GeneratorGraph::edmondsBlossomInMinimumSpanningTree() const {
+    EdmondsBlossomResult result(m_vertexCount);
+    KruskalResult kruskalResult = kruskalMinimumSpanningTree();
+
+    if (!kruskalResult.success) {
+        result.success = false;
+        return result;
+    }
+
+    Matrix adjacency(m_vertexCount, m_vertexCount, 0);
+
+    for (const auto& edge : kruskalResult.edges) {
+        adjacency(edge.from, edge.to) = 1;
+        adjacency(edge.to, edge.from) = 1;
+    }
+
+    return m_edmondsBlossom(
+        adjacency,
+        kruskalResult.spanningTreeMatrix,
+        true
+    );
+}
+
+EdmondsBlossomResult GeneratorGraph::m_edmondsBlossom(
+    const Matrix& adjacency,
+    const Matrix& weights,
+    bool hasWeights
+) const {
+    EdmondsBlossomResult result(m_vertexCount);
+    result.hasWeights = hasWeights;
+
+    if (hasWeights) {
+        result.edgeMatrix = Matrix(
+            m_vertexCount,
+            m_vertexCount,
+            std::numeric_limits<double>::infinity()
+        );
+
+        for (int i = 0; i < m_vertexCount; ++i) {
+            result.edgeMatrix(i, i) = 0;
+        }
+    }
+
+    // список смежности для алгоритма
+    std::vector<std::vector<int>> graph(m_vertexCount);
+
+    // переводим значение из матрицы смежности в список смежности
+    for (int i = 0; i < m_vertexCount; ++i) {
+        for (int j = i + 1; j < m_vertexCount; ++j) {
+            if (adjacency(i, j) != 0 || adjacency(j, i) != 0) {
+                graph[i].push_back(j);
+                graph[j].push_back(i);
+            }
+        }
+    }
+
+    // хотим выбрать как можно больше рёбер, чтобы они не касались друг друга
+    // => ищем увел. путь, путь от одной вершины до другой, где рёбра идут по очереди
+
+    // BEGIN
+    // а нечётные циклы временно сжимаем.
+    // match[v]: с какой вершиной соединена вершина v
+    std::vector<int> match(m_vertexCount, -1);
+    // parent[v]: предыдущая вершина в дереве поиска увеличивающегося пути
+    std::vector<int> parent(m_vertexCount);
+    std::vector<int> base(m_vertexCount);
+    // помечаем, что вершина уже добавлена в очередь
+    std::vector<bool> used(m_vertexCount);
+    // помечаем цикл в графе
+    std::vector<bool> blossom(m_vertexCount);
+    std::queue<int> queue;
+
+    // ищем общую базу нечётного цикла, чтобы сжать к одной вершине
+    auto findLca = [&](int first, int second) {
+        std::vector<bool> usedPath(m_vertexCount, false);
+
+        while (true) {
+            first = base[first];
+            usedPath[first] = true;
+
+            if (match[first] == -1) {
+                break;
+            }
+
+            first = parent[match[first]];
+        }
+
+        while (true) {
+            second = base[second];
+
+            if (usedPath[second]) {
+                return second;
+            }
+
+            second = parent[match[second]];
+        }
+    };
+
+    auto markPath = [&](int vertex,
+                        int lca,
+                        int child,
+                        auto&& markPathRef) -> void {
+        // помечаем путь от вершины до общей базы
+        while (base[vertex] != lca) {
+            blossom[base[vertex]] = true;
+            blossom[base[match[vertex]]] = true;
+            parent[vertex] = child;
+            child = match[vertex];
+            vertex = parent[match[vertex]];
+        }
+    };
+
+    auto findPath = [&](int root) {
+        // T <- ø: очищаем BFS-дерево поиска увеличивающего пути
+        std::fill(used.begin(), used.end(), false);
+        std::fill(parent.begin(), parent.end(), -1);
+
+        for (int i = 0; i < m_vertexCount; ++i) {
+            base[i] = i;
+        }
+
+        while (!queue.empty()) {
+            queue.pop();
+        }
+
+        // pick r in F; queue.push(r); T.add(r)
+        queue.push(root);
+        used[root] = true;
+
+        // WHILE queue != ø
+        while (!queue.empty()) {
+            // v <- queue.pop()
+            int vertex = queue.front();
+            queue.pop();
+
+            // FOR ALL neighbors w of v DO
+            for (int to : graph[vertex]) {
+                if (base[vertex] == base[to] ||
+                    match[vertex] == to) {
+                    continue;
+                }
+
+                if (to == root ||
+                    (match[to] != -1 && parent[match[to]] != -1)) {
+                    // ELSE IF w in T AND odd-length cycle detected THEN
+                    int lca = findLca(vertex, to);
+                    std::fill(blossom.begin(), blossom.end(), false);
+
+                    // contract cycle: найден нечётный цикл, сжимаем blossom к общей базе
+                    markPath(vertex, lca, to, markPath);
+                    markPath(to, lca, vertex, markPath);
+
+                    for (int i = 0; i < m_vertexCount; ++i) {
+                        if (blossom[base[i]]) {
+                            base[i] = lca;
+
+                            if (!used[i]) {
+                                used[i] = true;
+                                queue.push(i);
+                            }
+                        }
+                    }
+                } else if (parent[to] == -1) {
+                    // IF w not in T AND w matched THEN T.add(w), T.add(mate(w))
+                    parent[to] = vertex;
+
+                    if (match[to] == -1) {
+                        // ELSE IF w in F THEN свободная вершина завершает увеличивающий путь
+                        return to;
+                    }
+
+                    // queue.push(mate(w))
+                    int next = match[to];
+                    used[next] = true;
+                    queue.push(next);
+                }
+            }
+        }
+
+        return -1;
+    };
+
+    auto augment = [&](int vertex) {
+        // expand all contracted nodes; reconstruct augmenting path;
+        // invert augmenting path
+        while (vertex != -1) {
+            int previous = parent[vertex];
+            int next = (previous == -1) ? -1 : match[previous];
+
+            match[vertex] = previous;
+
+            if (previous != -1) {
+                match[previous] = vertex;
+            }
+
+            vertex = next;
+        }
+    };
+
+    // WHILE F != ø DO: пробуем стартовать из каждой свободной вершины
+    for (int vertex = 0; vertex < m_vertexCount; ++vertex) {
+        if (match[vertex] == -1) {
+            int endpoint = findPath(vertex);
+
+            if (endpoint != -1) {
+                augment(endpoint);
+            }
+        }
+    }
+    // END
+
+    for (int from = 0; from < m_vertexCount; ++from) {
+        int to = match[from];
+
+        if (to == -1 || from > to) {
+            continue;
+        }
+
+        double value = hasWeights ? weights(from, to) : 1;
+
+        result.edges.push_back({from, to, value});
+        result.edgeMatrix(from, to) = value;
+        result.edgeMatrix(to, from) = value;
+    }
 
     return result;
 }
