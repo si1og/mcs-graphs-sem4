@@ -66,13 +66,38 @@
 Полное дерево решений приведено на рисунке~\ref{fig:decision-tree}.
 
 \clearpage
-\refstepcounter{figure}
-\label{fig:decision-tree}
-\includepdf[
-    pages=1,
-    landscape,
-    fitpaper,
-    pagecommand={\thispagestyle{plain}}
-]{tex/graphics/fonts-advisor-diagram.pdf}
+\begingroup
+\pdfpagewidth=420mm
+\pdfpageheight=297mm
+\paperwidth=\pdfpagewidth
+\paperheight=\pdfpageheight
+\textwidth=\dimexpr\paperwidth-30mm\relax
+\textheight=\dimexpr\paperheight-30mm\relax
+\hsize=\textwidth
+\linewidth=\textwidth
+\columnwidth=\textwidth
+\oddsidemargin=\dimexpr15mm-1in\relax
+\evensidemargin=\oddsidemargin
+\topmargin=\dimexpr15mm-1in\relax
+\headheight=0pt
+\headsep=0pt
+\footskip=0pt
+\thispagestyle{empty}
+\noindent
+\begin{minipage}[t][\textheight][t]{\textwidth}
+    \centering
+    \includegraphics[
+        width=\textwidth,
+        height=0.82\textheight,
+        keepaspectratio
+    ]{tex/graphics/fonts-advisor-diagram.pdf}
 
-Листья дерева соответствуют разным сочетаниям критериев предметной области и содержат итоговые рекомендации по параметрам шрифтовой гарнитуры.
+    \vfill
+    \refstepcounter{figure}
+    \label{fig:decision-tree}
+    Рисунок~\thefigure~--- Бинарное дерево решений\\[0.45cm]
+    \thepage
+\end{minipage}
+\clearpage
+\endgroup
+\clearpage
