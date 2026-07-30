@@ -813,7 +813,7 @@ KruskalResult GeneratorGraph::kruskalMinimumSpanningTree() const {
     }
 
     // берем все ребра графа
-    std::vector<WeightedGraphEdge> edges;
+    std::vector<WeightedEdge> edges;
 
     for (int i = 0; i < m_vertexCount; ++i) {
         for (int j = i + 1; j < m_vertexCount; ++j) {
@@ -832,7 +832,7 @@ KruskalResult GeneratorGraph::kruskalMinimumSpanningTree() const {
     std::sort(
         edges.begin(),
         edges.end(),
-        [](const WeightedGraphEdge& lhs, const WeightedGraphEdge& rhs) {
+        [](const WeightedEdge& lhs, const WeightedEdge& rhs) {
             if (lhs.weight != rhs.weight) {
                 return lhs.weight < rhs.weight;
             }
@@ -915,7 +915,7 @@ KruskalResult GeneratorGraph::kruskalMinimumSpanningTree() const {
 }
 
 std::vector<PruferCodeItem> GeneratorGraph::m_encodePruferCode(
-    const std::vector<WeightedGraphEdge>& treeEdges
+    const std::vector<WeightedEdge>& treeEdges
 ) const {
     // кодируем полученный остов кодом Прюфера с сохранением весов рёбер
     std::vector<PruferCodeItem> code;
@@ -1251,3 +1251,4 @@ EdmondsBlossomResult GeneratorGraph::m_edmondsBlossom(
 }
 
 // lab5
+

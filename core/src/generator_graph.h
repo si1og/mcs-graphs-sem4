@@ -51,7 +51,12 @@ struct SpanningTreesResult {
     {}
 };
 
-struct WeightedGraphEdge {
+struct Edge {
+    int from = 0;
+    int to = 0;
+};
+
+struct WeightedEdge {
     int from = 0;
     int to = 0;
     double weight = 0;
@@ -63,7 +68,7 @@ struct PruferCodeItem {
 };
 
 struct KruskalResult {
-    std::vector<WeightedGraphEdge> edges;
+    std::vector<WeightedEdge> edges;
     std::vector<PruferCodeItem> pruferCode;
     Matrix spanningTreeMatrix;
     Matrix decodedTreeMatrix;
@@ -87,7 +92,7 @@ struct KruskalResult {
 };
 
 struct EdmondsBlossomResult {
-    std::vector<WeightedGraphEdge> edges;
+    std::vector<WeightedEdge> edges;
     Matrix edgeMatrix;
 
     bool success = true;
@@ -95,6 +100,18 @@ struct EdmondsBlossomResult {
 
     EdmondsBlossomResult(int vertexCount)
         : edgeMatrix(vertexCount, vertexCount, 0)
+    {}
+};
+
+struct CheckIfEulerianGraphResult {
+    bool isEulerian = false;
+    std::vector<Edge> addedEdges;
+    std::vector<Edge> removedEdges;
+    std::vector<int> eulerianCycle;
+    Matrix eulerianAdjacencyMatrix;
+
+    CheckIfEulerianGraphResult(int vertexCount)
+        : eulerianAdjacencyMatrix(vertexCount, vertexCount, 0)
     {}
 };
 
@@ -186,7 +203,7 @@ private:
         bool hasWeights
     ) const;
     std::vector<PruferCodeItem> m_encodePruferCode(
-        const std::vector<WeightedGraphEdge>& treeEdges
+        const std::vector<WeightedEdge>& treeEdges
     ) const;
     Matrix m_decodePruferCode(
         const std::vector<PruferCodeItem>& code
