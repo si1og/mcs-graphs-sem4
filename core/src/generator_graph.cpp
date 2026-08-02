@@ -1,6 +1,7 @@
 #include "generator_graph.h"
 #include <cmath>
 #include <set>
+#include <vector>
 
 namespace {
 bool matricesEqual(const Matrix& lhs, const Matrix& rhs) {
@@ -351,14 +352,16 @@ std::vector<int> GeneratorGraph::m_restorePath(int s,
     return path;
 }
 
-//TODO: обосновать очередь
+//TODO: обосновать очередь 
 // 1) обычная очередь работает менее эффективно, т.к. мы можем сделать много лишних циклов, извлекая вершины из очереди
 //    и ища оптимальную (в обычной очереди вершины расположены в порядке добавления в очередь, а не отсортированы по весам)
 //  - заменил на очередь c приоритетами (как написано на слайде)
 //
+// TODO: 
 // 2) кол-во итераций всегда выводится
 //  - теперь выводится всегда
 //
+// TODO:
 // 3) при перегенерации графа вводить число вершин
 //  - поправил
 ShortestPathResult GeneratorGraph::dijkstraNegative(
@@ -1251,4 +1254,57 @@ EdmondsBlossomResult GeneratorGraph::m_edmondsBlossom(
 }
 
 // lab5
+// Алгоритм приведения графа к эйлерову виду:
+// 1. Найти все вершины нечётной степени.
+// 2. Пока существуют нечётные вершины:
+//     * выбрать две вершины нечётной степени (u) и (v);
+//     * если ребро ((u,v)) существует, удалить его;
+//     * иначе добавить ребро ((u,v)).
+// После каждой такой операции степени вершин (u) и (v) меняют чётность, поэтому число вершин нечётной степени уменьшается на 2. Поскольку количество нечётных вершин в графе всегда чётно, процесс завершится за конечное число шагов.
 
+CheckIfEulerianGraphResult GeneratorGraph::checkIfEulerianGraph() const {
+    bool isEulerian = false;
+    Matrix adjacency = getAdjacencyMatrix();
+    std::vector<Edge> addedEdges;
+    std::vector<Edge> removedEdges; 
+    auto getVertexDegree = [&](size_t i) {
+        int degree = 0;
+        for (size_t j = 0; j < adjacency.cols(); ++j) {
+            if (i == j) continue;
+
+            if (adjacency(i, j) != 0) ++degree;
+        }
+
+        return degree;
+    };
+
+    std::vector<int> verticesWithOddDegrees;
+
+    while (true) {
+        verticesWithOddDegrees.clear();
+
+        for (size_t i = 0; i < adjacency.rows(); ++i) {
+            if (getVertexDegree(i) % 2 != 0) {
+                isEulerian = false;
+                verticesWithOddDegrees.push_back(i);
+            }
+        }
+
+        if (verticesWithOddDegrees.empty()) {
+            break;
+        }
+
+        const auto u = verticesWithOddDegrees[0];
+        const auto v = verticesWithOddDegrees[1];
+
+        if (adjacency(u, v) != 0) {
+            adjacency(u, v) = 0;
+            adjacency(v, u) = 0;
+            removedEdges.emplace_back(u, v);
+        } else {
+            adjacency(u, v) = 1;
+            adjacency(v, u) = 1;
+            addedEdges.emplace_back(u, v);
+        }
+    }
+}

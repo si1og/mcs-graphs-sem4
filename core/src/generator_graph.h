@@ -54,6 +54,8 @@ struct SpanningTreesResult {
 struct Edge {
     int from = 0;
     int to = 0;
+
+    Edge(int from, int to) : from(from), to(to) {};
 };
 
 struct WeightedEdge {
@@ -103,6 +105,7 @@ struct EdmondsBlossomResult {
     {}
 };
 
+// lab5
 struct CheckIfEulerianGraphResult {
     bool isEulerian = false;
     std::vector<Edge> addedEdges;
@@ -110,9 +113,19 @@ struct CheckIfEulerianGraphResult {
     std::vector<int> eulerianCycle;
     Matrix eulerianAdjacencyMatrix;
 
-    CheckIfEulerianGraphResult(int vertexCount)
-        : eulerianAdjacencyMatrix(vertexCount, vertexCount, 0)
-    {}
+    CheckIfEulerianGraphResult(
+    bool isEulerian,
+    std::vector<Edge>&& added,
+    std::vector<Edge>&& removed,
+    std::vector<int>&& cycle,
+    Matrix&& adjacency
+)
+    : isEulerian(isEulerian),
+      addedEdges(std::move(added)),
+      removedEdges(std::move(removed)),
+      eulerianCycle(std::move(cycle)),
+      eulerianAdjacencyMatrix(std::move(adjacency))
+{}
 };
 
 class GeneratorGraph : public Graph {
@@ -168,6 +181,9 @@ public:
     KruskalResult kruskalMinimumSpanningTree() const;
     EdmondsBlossomResult edmondsBlossomInOriginalGraph() const;
     EdmondsBlossomResult edmondsBlossomInMinimumSpanningTree() const;
+
+    //lab5
+    CheckIfEulerianGraphResult checkIfEulerianGraph() const;
 
 private:
     std::mt19937 m_rng;

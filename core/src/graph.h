@@ -23,6 +23,7 @@ public:
         bool weight = false;
         bool capacity = false;
         bool cost = false;
+        bool eulerian = false;
     } isMatrixInit;
 
 protected:
