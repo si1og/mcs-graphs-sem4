@@ -110,20 +110,17 @@ struct CheckIfEulerianGraphResult {
     bool isEulerian = false;
     std::vector<Edge> addedEdges;
     std::vector<Edge> removedEdges;
-    std::vector<int> eulerianCycle;
     Matrix eulerianAdjacencyMatrix;
 
     CheckIfEulerianGraphResult(
     bool isEulerian,
     std::vector<Edge>&& added,
     std::vector<Edge>&& removed,
-    std::vector<int>&& cycle,
     Matrix&& adjacency
 )
     : isEulerian(isEulerian),
       addedEdges(std::move(added)),
       removedEdges(std::move(removed)),
-      eulerianCycle(std::move(cycle)),
       eulerianAdjacencyMatrix(std::move(adjacency))
 {}
 };

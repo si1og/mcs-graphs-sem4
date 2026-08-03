@@ -43,4 +43,7 @@ private:
     void m_menuSpanningTreesCount();
     void m_menuKruskalMinimumSpanningTree();
     void m_menuEdmondsBlossom();
+
+    // lab5
+    void m_menuCheckEulerianGraph() const;
 };

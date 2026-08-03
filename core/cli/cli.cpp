@@ -605,6 +605,51 @@ void CLI::m_menuEdmondsBlossom() {
     result.edgeMatrix.print();
 }
 
+void CLI::m_menuCheckEulerianGraph() const {
+    m_printHeader("Проверка, является ли неориентированный граф эйлеровым, построение эйлерова цикла");
+
+    if (!m_graph->isMatrixInit.adjacency) {
+        std::cout << "Сначала сгенерируйте матрицу смежности "
+                  << "неориентированного графа.\n";
+        return;
+    }
+
+    const auto result = m_graph->checkIfEulerianGraph();
+
+    std::cout << "Неориентированный граф "
+              << (result.isEulerian ? "является" : "не является")
+              << " эйлеровым.\n";
+
+    if (result.addedEdges.empty() && result.removedEdges.empty()) {
+        std::cout << "Изменения графа не требуются.\n";
+    } else {
+        std::cout << "\nИзменения графа:\n";
+
+        if (!result.removedEdges.empty()) {
+            std::cout << "  удалены ребра:\n";
+            for (const auto& edge : result.removedEdges) {
+                std::cout << edge.from
+                          << " -- "
+                          << edge.to
+                          << "\n";
+            }
+        }
+
+        if (!result.addedEdges.empty()) {
+            std::cout << "  добавлены ребра:\n";
+            for (const auto& edge : result.addedEdges) {
+                std::cout << edge.from
+                          << " -- "
+                          << edge.to
+                          << "\n";
+            }
+        }
+    }
+
+    std::cout << "\nМатрица смежности эйлерова графа:\n";
+    result.eulerianAdjacencyMatrix.print();
+}
+
 void CLI::m_printMenu() const {
     std::cout
         << "\n----- Меню -----\n"
@@ -622,6 +667,7 @@ void CLI::m_printMenu() const {
         << "12. Число остовных деревьев\n"
         << "13. Минимальный остов: алгоритм Краскала\n"
         << "14. Алгоритм Эдмондса: максимальное независимое множество рёбер\n"
+        << "15. Проверка, является ли неориентированный граф эйлеровым, построение эйлерова цикла\n"
         << "0. Выход\n";
 }
 
@@ -638,7 +684,7 @@ void CLI::run() {
     while (true) {
         m_printMenu();
 
-        int choice = m_readInt("> ", 0, 14);
+        int choice = m_readInt("> ", 0, 15);
 
         if (choice == 0) {
             break;
@@ -699,6 +745,10 @@ void CLI::run() {
 
             case 14:
                 m_menuEdmondsBlossom();
+                break;
+
+            case 15:
+                m_menuCheckEulerianGraph();
                 break;
         }
     }

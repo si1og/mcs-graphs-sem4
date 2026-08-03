@@ -352,12 +352,12 @@ std::vector<int> GeneratorGraph::m_restorePath(int s,
     return path;
 }
 
-//TODO: обосновать очередь 
+//TODO: обосновать очередь
 // 1) обычная очередь работает менее эффективно, т.к. мы можем сделать много лишних циклов, извлекая вершины из очереди
 //    и ища оптимальную (в обычной очереди вершины расположены в порядке добавления в очередь, а не отсортированы по весам)
 //  - заменил на очередь c приоритетами (как написано на слайде)
 //
-// TODO: 
+// TODO:
 // 2) кол-во итераций всегда выводится
 //  - теперь выводится всегда
 //
@@ -1263,10 +1263,10 @@ EdmondsBlossomResult GeneratorGraph::m_edmondsBlossom(
 // После каждой такой операции степени вершин (u) и (v) меняют чётность, поэтому число вершин нечётной степени уменьшается на 2. Поскольку количество нечётных вершин в графе всегда чётно, процесс завершится за конечное число шагов.
 
 CheckIfEulerianGraphResult GeneratorGraph::checkIfEulerianGraph() const {
-    bool isEulerian = false;
+    bool isEulerian = true;
     Matrix adjacency = getUndirectedAdjacencyMatrix();
     std::vector<Edge> addedEdges;
-    std::vector<Edge> removedEdges; 
+    std::vector<Edge> removedEdges;
     auto getVertexDegree = [&](size_t i) {
         int degree = 0;
         for (size_t j = 0; j < adjacency.cols(); ++j) {
@@ -1307,4 +1307,11 @@ CheckIfEulerianGraphResult GeneratorGraph::checkIfEulerianGraph() const {
             addedEdges.emplace_back(u, v);
         }
     }
+
+    return CheckIfEulerianGraphResult(
+        isEulerian,
+        std::move(addedEdges),
+        std::move(removedEdges),
+        std::move(adjacency)
+    );
 }
