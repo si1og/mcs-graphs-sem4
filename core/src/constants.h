@@ -15,7 +15,7 @@ struct WeibullParams {
 namespace constants {
 
 inline constexpr WeibullParams graph {
-    .scale = 0.15,
+    .scale = 0.17,
     .shape = 2.0,
     .shift = 0.05
 };

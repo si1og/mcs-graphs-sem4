@@ -108,21 +108,27 @@ struct EdmondsBlossomResult {
 // lab5
 struct CheckIfEulerianGraphResult {
     bool isEulerian = false;
+    bool transformationCompleted = true;
+    bool resultIsConnected = true;
     std::vector<Edge> addedEdges;
     std::vector<Edge> removedEdges;
     Matrix eulerianAdjacencyMatrix;
 
     CheckIfEulerianGraphResult(
-    bool isEulerian,
-    std::vector<Edge>&& added,
-    std::vector<Edge>&& removed,
-    Matrix&& adjacency
-)
-    : isEulerian(isEulerian),
-      addedEdges(std::move(added)),
-      removedEdges(std::move(removed)),
-      eulerianAdjacencyMatrix(std::move(adjacency))
-{}
+        bool isEulerian,
+        bool transformationCompleted,
+        bool resultIsConnected,
+        std::vector<Edge>&& added,
+        std::vector<Edge>&& removed,
+        Matrix&& adjacency
+    )
+        : isEulerian(isEulerian),
+          transformationCompleted(transformationCompleted),
+          resultIsConnected(resultIsConnected),
+          addedEdges(std::move(added)),
+          removedEdges(std::move(removed)),
+          eulerianAdjacencyMatrix(std::move(adjacency))
+    {}
 };
 
 class GeneratorGraph : public Graph {
@@ -147,6 +153,7 @@ public:
     //lab2
     ArticulationPointsResult findArticulationPoints() const;
     ShortestPathResult dijkstraNegative(int s, int t) const;
+    ShortestPathResult dijkstraNegative(int s, int t, const Matrix& adjacency) const;
     ShortestPathResult dijkstraNegative(int s,
                                         int t,
                                         const Matrix& adjacency,
@@ -180,7 +187,9 @@ public:
     EdmondsBlossomResult edmondsBlossomInMinimumSpanningTree() const;
 
     //lab5
-    CheckIfEulerianGraphResult checkIfEulerianGraph() const;
+    CheckIfEulerianGraphResult checkIfEulerianGraph(
+        bool allowDisconnectedResult = false
+    ) const;
 
 private:
     std::mt19937 m_rng;

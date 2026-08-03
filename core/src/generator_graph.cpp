@@ -464,6 +464,15 @@ ShortestPathResult GeneratorGraph::dijkstraNegative(int s, int t) const {
     );
 }
 
+ShortestPathResult GeneratorGraph::dijkstraNegative(int s, int t, const Matrix& adjacency) const {
+    return dijkstraNegative(
+        s,
+        t,
+        adjacency,
+        adjacency
+    );
+}
+
 // lab3
 
 void GeneratorGraph::generateCapacityAndCostMatrices() {
@@ -1260,10 +1269,17 @@ EdmondsBlossomResult GeneratorGraph::m_edmondsBlossom(
 //     * выбрать две вершины нечётной степени (u) и (v);
 //     * если ребро ((u,v)) существует, удалить его;
 //     * иначе добавить ребро ((u,v)).
+// Патч для сохранения связности: перебираем пары нечётных вершин и перед
+// удалением ребра проверяем наличие обходного пути. Мост удаляется только
+// если пользователь явно разрешил получить несвязный результат.
 // После каждой такой операции степени вершин (u) и (v) меняют чётность, поэтому число вершин нечётной степени уменьшается на 2. Поскольку количество нечётных вершин в графе всегда чётно, процесс завершится за конечное число шагов.
 
-CheckIfEulerianGraphResult GeneratorGraph::checkIfEulerianGraph() const {
+CheckIfEulerianGraphResult GeneratorGraph::checkIfEulerianGraph(
+    bool allowDisconnectedResult
+) const {
     bool isEulerian = true;
+    bool transformationCompleted = true;
+    bool resultIsConnected = true;
     Matrix adjacency = getUndirectedAdjacencyMatrix();
     std::vector<Edge> addedEdges;
     std::vector<Edge> removedEdges;
@@ -1294,22 +1310,52 @@ CheckIfEulerianGraphResult GeneratorGraph::checkIfEulerianGraph() const {
             break;
         }
 
-        const auto u = verticesWithOddDegrees[0];
-        const auto v = verticesWithOddDegrees[1];
+        bool graphChanged = false;
 
-        if (adjacency(u, v) != 0) {
-            adjacency(u, v) = 0;
-            adjacency(v, u) = 0;
-            removedEdges.emplace_back(u, v);
-        } else {
-            adjacency(u, v) = 1;
-            adjacency(v, u) = 1;
-            addedEdges.emplace_back(u, v);
+        for (size_t i = 0; i < verticesWithOddDegrees.size() && !graphChanged; ++i) {
+            for (size_t j = i + 1; j < verticesWithOddDegrees.size(); ++j) {
+                const auto u = verticesWithOddDegrees[i];
+                const auto v = verticesWithOddDegrees[j];
+
+                if (adjacency(u, v) == 0) {
+                    adjacency(u, v) = 1;
+                    adjacency(v, u) = 1;
+                    addedEdges.emplace_back(u, v);
+                    graphChanged = true;
+                    break;
+                }
+
+                Matrix temp = adjacency;
+                temp(u, v) = 0;
+                temp(v, u) = 0;
+
+                const auto resultPath = dijkstraNegative(u, v, temp);
+
+                if (resultPath.hasPath || allowDisconnectedResult) {
+                    adjacency(u, v) = 0;
+                    adjacency(v, u) = 0;
+                    removedEdges.emplace_back(u, v);
+
+                    if (!resultPath.hasPath) {
+                        resultIsConnected = false;
+                    }
+
+                    graphChanged = true;
+                    break;
+                }
+            }
+        }
+
+        if (!graphChanged) {
+            transformationCompleted = false;
+            break;
         }
     }
 
     return CheckIfEulerianGraphResult(
         isEulerian,
+        transformationCompleted,
+        resultIsConnected,
         std::move(addedEdges),
         std::move(removedEdges),
         std::move(adjacency)
