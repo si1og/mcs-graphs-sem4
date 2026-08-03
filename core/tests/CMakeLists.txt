@@ -1,0 +1,13 @@
+function(add_core_test name)
+    add_executable(${name} ${name}.cpp)
+    target_link_libraries(${name} PRIVATE core)
+    add_test(NAME ${name} COMMAND ${name})
+endfunction()
+
+add_core_test(matrix_determinant_test)
+add_core_test(generated_graph_test)
+add_core_test(kirchhoff_test)
+add_core_test(kruskal_prufer_test)
+add_core_test(edmonds_blossom_test)
+add_core_test(flows_test)
+add_core_test(eulerian_test)
