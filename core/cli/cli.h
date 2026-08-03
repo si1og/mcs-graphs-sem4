@@ -17,6 +17,9 @@ private:
 
     void m_generateGraph();
     void m_printHeader(const std::string& title) const;
+    void m_printInfo(const std::string& message) const;
+    void m_printWarning(const std::string& message) const;
+    void m_printError(const std::string& message) const;
     int m_readInt(const std::string& prompt,
                   int min,
                   int max) const;

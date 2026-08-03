@@ -21,6 +21,18 @@ void CLI::m_printHeader(const std::string& title) const {
     std::cout << "\n===== " << title << " =====\n";
 }
 
+void CLI::m_printInfo(const std::string& message) const {
+    std::cout << "[*] " << message << "\n";
+}
+
+void CLI::m_printWarning(const std::string& message) const {
+    std::cout << "[!] " << message << "\n";
+}
+
+void CLI::m_printError(const std::string& message) const {
+    std::cout << "[x] " << message << "\n";
+}
+
 int CLI::m_readInt(const std::string& prompt,
                    int min,
                    int max) const {
@@ -35,7 +47,7 @@ int CLI::m_readInt(const std::string& prompt,
             return value;
         }
 
-        std::cout << "Некорректный ввод.\n";
+        m_printError("Некорректный ввод.");
 
         std::cin.clear();
 
@@ -63,7 +75,7 @@ void CLI::m_menuGenerate() {
 
     m_generateGraph();
 
-    std::cout << "Граф сгенерирован.\n";
+    m_printInfo("Граф сгенерирован.");
 
     m_graph->printAdjacencyMatrix();
 }
@@ -133,7 +145,7 @@ void CLI::m_menuWeights() {
 
     m_graph->generateWeightMatrix(wm);
 
-    std::cout << "Весовая матрица сгенерирована.\n";
+    m_printInfo("Весовая матрица сгенерирована.");
 
     m_graph->printWeightMatrix();
 }
@@ -142,7 +154,7 @@ void CLI::m_menuShimbell() const {
     m_printHeader("Алгоритм Шимбелла");
 
     if (!m_graph->isMatrixInit.weight) {
-        std::cout << "Весовая матрица не инициализирована.\n";
+        m_printError("Весовая матрица не инициализирована.");
         return;
     }
 
@@ -242,7 +254,7 @@ void CLI::m_runDijkstraNegative() {
     );
 
     if (!m_graph->isMatrixInit.weight) {
-        std::cout << "Весовая матрица не инициализирована.\n";
+        m_printError("Весовая матрица не инициализирована.");
         return;
     }
 
@@ -354,7 +366,8 @@ void CLI::m_menuCapacityAndCostMatrices() {
 
     m_graph->generateCapacityAndCostMatrices();
 
-    std::cout << "Матрицы сгенерированы.\n\n";
+    m_printInfo("Матрицы сгенерированы.");
+    std::cout << "\n";
 
     m_graph->printCapacityMatrix();
 
@@ -367,7 +380,7 @@ void CLI::m_menuMaxFlow() {
     m_printHeader("Максимальный поток");
 
     if (!m_graph->isCapacityMatrixGenerated()) {
-        std::cout << "Сначала сгенерируйте матрицу пропускных способностей.\n";
+        m_printError("Сначала сгенерируйте матрицу пропускных способностей.");
         return;
     }
 
@@ -380,7 +393,7 @@ void CLI::m_menuMaxFlow() {
     int sink = m_readInt("> ", 0, vertexCount - 1);
 
     if (source == sink) {
-        std::cout << "Источник и сток должны различаться.\n";
+        m_printError("Источник и сток должны различаться.");
         return;
     }
 
@@ -403,12 +416,12 @@ void CLI::m_menuMinCostFlow() {
     m_printHeader("Поток минимальной стоимости");
 
     if (!m_graph->isCapacityMatrixGenerated()) {
-        std::cout << "Сначала сгенерируйте матрицу пропускных способностей.\n";
+        m_printError("Сначала сгенерируйте матрицу пропускных способностей.");
         return;
     }
 
     if (!m_graph->isCostMatrixGenerated()) {
-        std::cout << "Сначала сгенерируйте матрицу стоимостей.\n";
+        m_printError("Сначала сгенерируйте матрицу стоимостей.");
         return;
     }
 
@@ -421,7 +434,7 @@ void CLI::m_menuMinCostFlow() {
     int sink = m_readInt("> ", 0, vertexCount - 1);
 
     if (source == sink) {
-        std::cout << "Источник и сток должны различаться.\n";
+        m_printError("Источник и сток должны различаться.");
         return;
     }
 
@@ -448,7 +461,7 @@ void CLI::m_menuMinCostFlow() {
     );
 
     if (!minCostResult.success) {
-        std::cout << "Не удалось построить поток заданной величины.\n";
+        m_printError("Не удалось построить поток заданной величины.");
         std::cout << "Достигнутый поток: "
                   << minCostResult.achievedFlow
                   << "\n";
@@ -495,14 +508,14 @@ void CLI::m_menuKruskalMinimumSpanningTree() {
     m_printHeader("Минимальный остов: алгоритм Краскала");
 
     if (!m_graph->isMatrixInit.weight) {
-        std::cout << "Сначала сгенерируйте весовую матрицу.\n";
+        m_printError("Сначала сгенерируйте весовую матрицу.");
         return;
     }
 
     auto result = m_graph->kruskalMinimumSpanningTree();
 
     if (!result.success) {
-        std::cout << "Не удалось построить остов: граф несвязный.\n";
+        m_printError("Не удалось построить остов: граф несвязный.");
         return;
     }
 
@@ -564,8 +577,10 @@ void CLI::m_menuEdmondsBlossom() {
     int target = m_readInt("> ", 1, 2);
 
     if (target == 2 && !m_graph->isMatrixInit.weight) {
-        std::cout << "Сначала сгенерируйте весовую матрицу "
-                  << "для построения минимального остова.\n";
+        m_printError(
+            "Сначала сгенерируйте весовую матрицу "
+            "для построения минимального остова."
+        );
         return;
     }
 
@@ -574,7 +589,7 @@ void CLI::m_menuEdmondsBlossom() {
         : m_graph->edmondsBlossomInMinimumSpanningTree();
 
     if (!result.success) {
-        std::cout << "Не удалось построить множество рёбер.\n";
+        m_printError("Не удалось построить множество рёбер.");
         return;
     }
 
@@ -609,43 +624,48 @@ void CLI::m_menuCheckEulerianGraph() const {
     m_printHeader("Проверка, является ли неориентированный граф эйлеровым, построение эйлерова цикла");
 
     if (!m_graph->isMatrixInit.adjacency) {
-        std::cout << "Сначала сгенерируйте матрицу смежности "
-                  << "неориентированного графа.\n";
+        m_printError(
+            "Сначала сгенерируйте матрицу смежности "
+            "неориентированного графа."
+        );
         return;
     }
 
     auto result = m_graph->checkIfEulerianGraph();
 
     if (!result.transformationCompleted) {
-        std::cout
-            << "Невозможно завершить преобразование, не удалив мост "
-            << "и не нарушив связность графа.\n"
-            << "  1 — отменить преобразование\n"
-            << "  2 — разрешить разбиение графа на компоненты\n";
+        m_printWarning(
+            "Невозможно завершить преобразование, не удалив мост "
+            "и не нарушив связность графа."
+        );
+        std::cout << "  1 — отменить преобразование\n"
+                  << "  2 — разрешить разбиение графа на компоненты\n";
 
         const int choice = m_readInt("> ", 1, 2);
 
         if (choice == 1) {
-            std::cout << "Преобразование отменено.\n";
+            m_printInfo("Преобразование отменено.");
             return;
         }
 
         result = m_graph->checkIfEulerianGraph(true);
     }
 
-    std::cout << "Неориентированный граф "
-              << (result.isEulerian ? "является" : "не является")
-              << " эйлеровым.\n";
+    m_printInfo(
+        std::string("Неориентированный граф ")
+        + (result.isEulerian ? "является" : "не является")
+        + " эйлеровым."
+    );
 
     if (!result.resultIsConnected) {
-        std::cout
-            << "Предупреждение: после преобразования все степени чётные, "
-            << "но граф разделён на компоненты. Единый эйлеров цикл "
-            << "построить нельзя.\n";
+        m_printWarning(
+            "После преобразования все степени чётные, но граф разделён "
+            "на компоненты. Единый эйлеров цикл построить нельзя."
+        );
     }
 
     if (result.addedEdges.empty() && result.removedEdges.empty()) {
-        std::cout << "Изменения графа не требуются.\n";
+        m_printInfo("Изменения графа не требуются.");
     } else {
         std::cout << "\nИзменения графа:\n";
 
@@ -702,8 +722,8 @@ void CLI::run() {
 
     m_generateGraph();
 
-    std::cout
-        << "\nГраф сгенерирован автоматически.\n";
+    std::cout << "\n";
+    m_printInfo("Граф сгенерирован автоматически.");
 
     m_graph->printAdjacencyMatrix();
 
