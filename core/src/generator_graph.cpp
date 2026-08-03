@@ -1264,7 +1264,7 @@ EdmondsBlossomResult GeneratorGraph::m_edmondsBlossom(
 
 CheckIfEulerianGraphResult GeneratorGraph::checkIfEulerianGraph() const {
     bool isEulerian = false;
-    Matrix adjacency = getAdjacencyMatrix();
+    Matrix adjacency = getUndirectedAdjacencyMatrix();
     std::vector<Edge> addedEdges;
     std::vector<Edge> removedEdges; 
     auto getVertexDegree = [&](size_t i) {
