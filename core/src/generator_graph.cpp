@@ -1,6 +1,8 @@
 #include "generator_graph.h"
 #include <cmath>
 #include <set>
+#include <stack>
+#include <stdexcept>
 #include <vector>
 
 namespace {
@@ -1346,12 +1348,63 @@ CheckIfEulerianGraphResult GeneratorGraph::checkIfEulerianGraph(
         }
     }
 
+    FleuryResult eulerianCycle;
+
+    if (transformationCompleted && resultIsConnected) {
+        eulerianCycle = m_flueryAlgorithm(adjacency);
+    }
+
     return CheckIfEulerianGraphResult(
         isEulerian,
         transformationCompleted,
         resultIsConnected,
         std::move(addedEdges),
         std::move(removedEdges),
+        std::move(eulerianCycle),
         std::move(adjacency)
     );
+}
+
+FleuryResult GeneratorGraph::m_flueryAlgorithm(const Matrix& adjacency) const {
+    auto graph = m_matrixToAdjacencyList<int>(
+        adjacency,
+        [](int, int to) {
+            return to;
+        }
+    );
+
+    FleuryResult path;
+    std::stack<int> stack;
+    stack.push(0);
+
+    while (!stack.empty()) {
+        const int node = stack.top();
+
+        if (graph[node].empty()) {
+            path.emplace_back(node);
+            stack.pop();
+
+        } else {
+            const int next = graph[node].front();
+            graph[node].erase(graph[node].begin());
+
+            const auto reverseEdge = std::find(
+                graph[next].begin(),
+                graph[next].end(),
+                node
+            );
+
+            if (reverseEdge == graph[next].end()) {
+                throw std::logic_error(
+                    "Обратное ребро отсутствует в списке смежности"
+                );
+            }
+
+            graph[next].erase(reverseEdge);
+            stack.push(next);
+        }
+    }
+
+    std::reverse(path.begin(), path.end());
+    return path;
 }

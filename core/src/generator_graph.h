@@ -112,6 +112,7 @@ struct CheckIfEulerianGraphResult {
     bool resultIsConnected = true;
     std::vector<Edge> addedEdges;
     std::vector<Edge> removedEdges;
+    std::vector<int> eulerianCycle;
     Matrix eulerianAdjacencyMatrix;
 
     CheckIfEulerianGraphResult(
@@ -120,6 +121,7 @@ struct CheckIfEulerianGraphResult {
         bool resultIsConnected,
         std::vector<Edge>&& added,
         std::vector<Edge>&& removed,
+        std::vector<int>&& cycle,
         Matrix&& adjacency
     )
         : isEulerian(isEulerian),
@@ -127,9 +129,12 @@ struct CheckIfEulerianGraphResult {
           resultIsConnected(resultIsConnected),
           addedEdges(std::move(added)),
           removedEdges(std::move(removed)),
+          eulerianCycle(std::move(cycle)),
           eulerianAdjacencyMatrix(std::move(adjacency))
     {}
 };
+
+using FleuryResult = std::vector<int>;
 
 class GeneratorGraph : public Graph {
 public:
@@ -230,4 +235,7 @@ private:
     Matrix m_decodePruferCode(
         const std::vector<PruferCodeItem>& code
     ) const;
+
+    // lab5
+    FleuryResult m_flueryAlgorithm(const Matrix& adjacency) const;
 };

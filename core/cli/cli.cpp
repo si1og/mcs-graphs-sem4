@@ -694,6 +694,20 @@ void CLI::m_menuCheckEulerianGraph() const {
         ? "\nМатрица смежности эйлерова графа:\n"
         : "\nМатрица графа с чётными степенями:\n");
     result.eulerianAdjacencyMatrix.print();
+
+    if (!result.eulerianCycle.empty()) {
+        std::cout << "\nЭйлеров цикл: ";
+
+        for (size_t i = 0; i < result.eulerianCycle.size(); ++i) {
+            std::cout << result.eulerianCycle[i];
+
+            if (i + 1 < result.eulerianCycle.size()) {
+                std::cout << " -> ";
+            }
+        }
+
+        std::cout << "\n";
+    }
 }
 
 void CLI::m_printMenu() const {
