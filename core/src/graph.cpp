@@ -31,6 +31,24 @@ const Matrix& Graph::getUndirectedWeightMatrix() const {
     return m_undirectedWeightMatrix;
 }
 
+AdjacencyList Graph::getAdjacencyList() const {
+    return m_matrixToAdjacencyList<int>(
+        m_adjacencyMatrix,
+        [](int, int to) {
+            return to;
+        }
+    );
+}
+
+WeightedAdjacencyList Graph::getWeightedAdjacencyList() const {
+    return m_matrixToAdjacencyList<WeightedNeighbor>(
+        m_adjacencyMatrix,
+        [&](int from, int to) {
+            return WeightedNeighbor{to, m_weightMatrix(from, to)};
+        }
+    );
+}
+
 void Graph::printAdjacencyMatrix() const {
     std::cout << "Матрица смежности:\n";
     m_adjacencyMatrix.print();

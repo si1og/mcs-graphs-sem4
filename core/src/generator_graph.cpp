@@ -1077,18 +1077,12 @@ EdmondsBlossomResult GeneratorGraph::m_edmondsBlossom(
         }
     }
 
-    // список смежности для алгоритма
-    std::vector<std::vector<int>> graph(m_vertexCount);
-
-    // переводим значение из матрицы смежности в список смежности
-    for (int i = 0; i < m_vertexCount; ++i) {
-        for (int j = i + 1; j < m_vertexCount; ++j) {
-            if (adjacency(i, j) != 0 || adjacency(j, i) != 0) {
-                graph[i].push_back(j);
-                graph[j].push_back(i);
-            }
+    const auto graph = m_matrixToAdjacencyList<int>(
+        adjacency,
+        [](int, int to) {
+            return to;
         }
-    }
+    );
 
     // хотим выбрать как можно больше рёбер, чтобы они не касались друг друга
     // => ищем увел. путь, путь от одной вершины до другой, где рёбра идут по очереди
