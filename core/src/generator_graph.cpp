@@ -818,17 +818,15 @@ SpanningTreesResult GeneratorGraph::countSpanningTreesKirchhoff() const {
     return result;
 }
 
-KruskalResult GeneratorGraph::kruskalMinimumSpanningTree() const {
+KruskalResult GeneratorGraph::m_kruskalAlgorithm() const {
     KruskalResult result(m_vertexCount);
+    std::vector<WeightedEdge> edges;
 
     for (int i = 0; i < m_vertexCount; ++i) {
-        result.spanningTreeMatrix(i, i) = 0;
-        result.decodedTreeMatrix(i, i) = 0;
+        result.treeMatrix(i, i) = 0;
     }
 
     // берем все ребра графа
-    std::vector<WeightedEdge> edges;
-
     for (int i = 0; i < m_vertexCount; ++i) {
         for (int j = i + 1; j < m_vertexCount; ++j) {
             if (m_undirectedAdjacencyMatrix(i, j) != 0 &&
@@ -902,8 +900,8 @@ KruskalResult GeneratorGraph::kruskalMinimumSpanningTree() const {
         if (unionSets(edge.from, edge.to)) {
             // добавляем ребро в остов, если оно не образует цикл
             result.edges.push_back(edge);
-            result.spanningTreeMatrix(edge.from, edge.to) = edge.weight;
-            result.spanningTreeMatrix(edge.to, edge.from) = edge.weight;
+            result.treeMatrix(edge.from, edge.to) = edge.weight;
+            result.treeMatrix(edge.to, edge.from) = edge.weight;
             result.totalWeight += edge.weight;
 
             // останавливаемся, когда выбрали n - 1 ребро
@@ -916,14 +914,24 @@ KruskalResult GeneratorGraph::kruskalMinimumSpanningTree() const {
     result.success =
         static_cast<int>(result.edges.size()) == m_vertexCount - 1;
 
-    if (!result.success) {
+    return result;
+}
+
+KruskalMinimumSpanningTreeResult GeneratorGraph::kruskalMinimumSpanningTree() const {
+    KruskalMinimumSpanningTreeResult result(std::move(m_kruskalAlgorithm()), m_vertexCount);
+
+    for (int i = 0; i < m_vertexCount; ++i) {
+        result.decodedTreeMatrix(i, i) = 0;
+    }
+
+    if (!result.kruskal.success) {
         return result;
     }
 
-    result.pruferCode = m_encodePruferCode(result.edges);
+    result.pruferCode = m_encodePruferCode(result.kruskal.edges);
     result.decodedTreeMatrix = m_decodePruferCode(result.pruferCode);
     result.pruferRoundTripSuccess =
-        matricesEqual(result.spanningTreeMatrix, result.decodedTreeMatrix);
+        matricesEqual(result.kruskal.treeMatrix, result.decodedTreeMatrix);
 
     return result;
 }
@@ -1038,23 +1046,23 @@ GeneratorGraph::edmondsBlossomInOriginalGraph() const {
 EdmondsBlossomResult
 GeneratorGraph::edmondsBlossomInMinimumSpanningTree() const {
     EdmondsBlossomResult result(m_vertexCount);
-    KruskalResult kruskalResult = kruskalMinimumSpanningTree();
+    auto kruskalMinimumSpanningTreeResult = kruskalMinimumSpanningTree();
 
-    if (!kruskalResult.success) {
+    if (!kruskalMinimumSpanningTreeResult.kruskal.success) {
         result.success = false;
         return result;
     }
 
     Matrix adjacency(m_vertexCount, m_vertexCount, 0);
 
-    for (const auto& edge : kruskalResult.edges) {
+    for (const auto& edge : kruskalMinimumSpanningTreeResult.kruskal.edges) {
         adjacency(edge.from, edge.to) = 1;
         adjacency(edge.to, edge.from) = 1;
     }
 
     return m_edmondsBlossom(
         adjacency,
-        kruskalResult.spanningTreeMatrix,
+        kruskalMinimumSpanningTreeResult.kruskal.treeMatrix,
         true
     );
 }
@@ -1407,4 +1415,10 @@ FleuryResult GeneratorGraph::m_flueryAlgorithm(const Matrix& adjacency) const {
 
     std::reverse(path.begin(), path.end());
     return path;
+}
+
+FundamentalCutsResult GeneratorGraph::buildFundamentalCutSystem() const {
+    Matrix adjacency = getUndirectedAdjacencyMatrix();
+
+
 }

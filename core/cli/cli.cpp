@@ -514,14 +514,14 @@ void CLI::m_menuKruskalMinimumSpanningTree() {
 
     auto result = m_graph->kruskalMinimumSpanningTree();
 
-    if (!result.success) {
+    if (!result.kruskal.success) {
         m_printError("Не удалось построить остов: граф несвязный.");
         return;
     }
 
     std::cout << "Рёбра минимального остова:\n";
 
-    for (const auto& edge : result.edges) {
+    for (const auto& edge : result.kruskal.edges) {
         std::cout << edge.from
                   << " -- "
                   << edge.to
@@ -531,11 +531,11 @@ void CLI::m_menuKruskalMinimumSpanningTree() {
     }
 
     std::cout << "\nВес минимального остова: "
-              << result.totalWeight
+              << result.kruskal.totalWeight
               << "\n\n";
 
     std::cout << "Матрица весов минимального остова:\n";
-    result.spanningTreeMatrix.print();
+    result.kruskal.treeMatrix.print();
 
     std::cout << "\nКод Прюфера: ";
     for (size_t i = 0; i < result.pruferCode.size(); ++i) {

@@ -78,21 +78,29 @@ struct PruferCodeItem {
 
 struct KruskalResult {
     std::vector<WeightedEdge> edges;
-    std::vector<PruferCodeItem> pruferCode;
-    Matrix spanningTreeMatrix;
-    Matrix decodedTreeMatrix;
-
+    Matrix treeMatrix;
     double totalWeight = 0;
     bool success = false;
-    bool pruferRoundTripSuccess = false;
 
     KruskalResult(int vertexCount)
-        : spanningTreeMatrix(
-              vertexCount,
-              vertexCount,
-              std::numeric_limits<double>::infinity()
-          )
-        , decodedTreeMatrix(
+        : treeMatrix(
+            vertexCount,
+            vertexCount,
+            std::numeric_limits<double>::infinity()
+        )
+    {}
+};
+
+struct KruskalMinimumSpanningTreeResult {
+    KruskalResult kruskal;
+
+    std::vector<PruferCodeItem> pruferCode;
+    Matrix decodedTreeMatrix;
+    bool pruferRoundTripSuccess = false;
+
+    KruskalMinimumSpanningTreeResult(KruskalResult&& other, int vertexCount)
+        : kruskal(std::move(other)),
+          decodedTreeMatrix(
               vertexCount,
               vertexCount,
               std::numeric_limits<double>::infinity()
@@ -205,7 +213,7 @@ public:
 
     // lab4
     SpanningTreesResult countSpanningTreesKirchhoff() const;
-    KruskalResult kruskalMinimumSpanningTree() const;
+    KruskalMinimumSpanningTreeResult kruskalMinimumSpanningTree() const;
     EdmondsBlossomResult edmondsBlossomInOriginalGraph() const;
     EdmondsBlossomResult edmondsBlossomInMinimumSpanningTree() const;
 
@@ -215,10 +223,6 @@ public:
     ) const;
 
     FundamentalCutsResult buildFundamentalCutSystem() const;
-    GraphCut symmetricDifferenceOfFundamentalCuts(
-        const FundamentalCutsResult& system,
-        const std::vector<int>& selectedCutIndices
-    ) const;
 
 private:
     std::mt19937 m_rng;
@@ -248,6 +252,7 @@ private:
     Matrix m_costMatrix;
 
     // lab4
+    KruskalResult m_kruskalAlgorithm() const;
     EdmondsBlossomResult m_edmondsBlossom(
         const Matrix& adjacency,
         const Matrix& weights,
@@ -262,4 +267,8 @@ private:
 
     // lab5
     FleuryResult m_flueryAlgorithm(const Matrix& adjacency) const;
+    GraphCut m_symmetricDifferenceOfFundamentalCuts(
+        const FundamentalCutsResult& system,
+        const std::vector<int>& selectedCutIndices
+    ) const;
 };
