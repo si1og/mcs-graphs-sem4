@@ -1418,7 +1418,89 @@ FleuryResult GeneratorGraph::m_flueryAlgorithm(const Matrix& adjacency) const {
 }
 
 FundamentalCutsResult GeneratorGraph::buildFundamentalCutSystem() const {
-    Matrix adjacency = getUndirectedAdjacencyMatrix();
+    FundamentalCutsResult result;
 
+    if (!isMatrixInit.adjacency || !isMatrixInit.weight) {
+        return result;
+    }
 
+    const KruskalResult spanningTree = m_kruskalAlgorithm();
+
+    if (!spanningTree.success) {
+        return result;
+    }
+
+    AdjacencyList tree(m_vertexCount);
+
+    for (const auto& edge : spanningTree.edges) {
+        tree[edge.from].push_back(edge.to);
+        tree[edge.to].push_back(edge.from);
+    }
+
+    for (const auto& removedEdge : spanningTree.edges) {
+        std::vector<bool> firstComponent(m_vertexCount, false);
+        std::vector<int> stack = {removedEdge.from};
+        firstComponent[removedEdge.from] = true;
+
+        // Удаление ребра остова делит дерево на две компоненты.
+        while (!stack.empty()) {
+            const int vertex = stack.back();
+            stack.pop_back();
+
+            for (int to : tree[vertex]) {
+                const bool isRemovedEdge =
+                    (vertex == removedEdge.from && to == removedEdge.to) ||
+                    (vertex == removedEdge.to && to == removedEdge.from);
+
+                if (!isRemovedEdge && !firstComponent[to]) {
+                    firstComponent[to] = true;
+                    stack.push_back(to);
+                }
+            }
+        }
+
+        GraphCut cut;
+
+        // В разрез входят все рёбра исходного графа между компонентами.
+        for (int from = 0; from < m_vertexCount; ++from) {
+            for (int to = from + 1; to < m_vertexCount; ++to) {
+                if (m_undirectedAdjacencyMatrix(from, to) != 0 &&
+                    firstComponent[from] != firstComponent[to]) {
+                    cut.emplace(from, to);
+                }
+            }
+        }
+
+        result.fundamentalCuts.push_back({
+            {removedEdge.from, removedEdge.to},
+            std::move(cut)
+        });
+    }
+
+    result.success =
+        static_cast<int>(result.fundamentalCuts.size()) == m_vertexCount - 1;
+    return result;
+}
+
+GraphCut GeneratorGraph::symmetricDifferenceOfFundamentalCuts(
+    const FundamentalCutsResult& system,
+    const std::vector<int>& selectedCutIndices
+) const {
+    GraphCut result;
+
+    for (int index : selectedCutIndices) {
+        if (index < 0 || index >= static_cast<int>(system.fundamentalCuts.size())) {
+            throw std::out_of_range("Номер фундаментального разреза вне диапазона");
+        }
+
+        for (const auto& edge : system.fundamentalCuts[index].cut) {
+            const auto [position, inserted] = result.insert(edge);
+
+            if (!inserted) {
+                result.erase(position);
+            }
+        }
+    }
+
+    return result;
 }

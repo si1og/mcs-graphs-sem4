@@ -63,6 +63,10 @@ struct Edge {
         return from < other.from ||
                (from == other.from && to < other.to);
     }
+
+    bool operator==(const Edge& other) const {
+        return from == other.from && to == other.to;
+    }
 };
 
 struct WeightedEdge {
@@ -223,6 +227,10 @@ public:
     ) const;
 
     FundamentalCutsResult buildFundamentalCutSystem() const;
+    GraphCut symmetricDifferenceOfFundamentalCuts(
+        const FundamentalCutsResult& system,
+        const std::vector<int>& selectedCutIndices
+    ) const;
 
 private:
     std::mt19937 m_rng;
@@ -267,8 +275,4 @@ private:
 
     // lab5
     FleuryResult m_flueryAlgorithm(const Matrix& adjacency) const;
-    GraphCut m_symmetricDifferenceOfFundamentalCuts(
-        const FundamentalCutsResult& system,
-        const std::vector<int>& selectedCutIndices
-    ) const;
 };

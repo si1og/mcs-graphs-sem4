@@ -100,4 +100,27 @@ public:
 
         isMatrixInit.adjacency = true;
     }
+
+    void setUndirectedWeightedEdges(const std::vector<WeightedEdge>& edges) {
+        m_undirectedAdjacencyMatrix = Matrix(m_vertexCount, m_vertexCount, 0);
+        m_undirectedWeightMatrix = Matrix(
+            m_vertexCount,
+            m_vertexCount,
+            std::numeric_limits<double>::infinity()
+        );
+
+        for (int vertex = 0; vertex < m_vertexCount; ++vertex) {
+            m_undirectedWeightMatrix(vertex, vertex) = 0;
+        }
+
+        for (const auto& edge : edges) {
+            m_undirectedAdjacencyMatrix(edge.from, edge.to) = 1;
+            m_undirectedAdjacencyMatrix(edge.to, edge.from) = 1;
+            m_undirectedWeightMatrix(edge.from, edge.to) = edge.weight;
+            m_undirectedWeightMatrix(edge.to, edge.from) = edge.weight;
+        }
+
+        isMatrixInit.adjacency = true;
+        isMatrixInit.weight = true;
+    }
 };

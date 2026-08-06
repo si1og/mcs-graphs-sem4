@@ -710,6 +710,76 @@ void CLI::m_menuCheckEulerianGraph() const {
     }
 }
 
+void CLI::m_menuFundamentalCuts() const {
+    m_printHeader("Фундаментальная система разрезов");
+
+    if (!m_graph->isMatrixInit.adjacency ||
+        !m_graph->isMatrixInit.weight) {
+        m_printError(
+            "Сначала сгенерируйте неориентированный граф и матрицу весов."
+        );
+        return;
+    }
+
+    const auto result = m_graph->buildFundamentalCutSystem();
+
+    if (!result.success) {
+        m_printError("Не удалось построить минимальный остов связного графа.");
+        return;
+    }
+
+    for (size_t i = 0; i < result.fundamentalCuts.size(); ++i) {
+        const auto& fundamentalCut = result.fundamentalCuts[i];
+        std::cout << i + 1
+                  << ". Удалено ребро остова "
+                  << fundamentalCut.removedTreeEdge.from
+                  << " -- "
+                  << fundamentalCut.removedTreeEdge.to
+                  << ": ";
+
+        for (const auto& edge : fundamentalCut.cut) {
+            std::cout << "(" << edge.from << ", " << edge.to << ") ";
+        }
+
+        std::cout << "\n";
+    }
+
+    const int count = m_readInt(
+        "\nКоличество разрезов для симметрической разности: ",
+        1,
+        static_cast<int>(result.fundamentalCuts.size())
+    );
+    std::vector<int> selectedCutIndices;
+    selectedCutIndices.reserve(count);
+
+    for (int i = 0; i < count; ++i) {
+        selectedCutIndices.push_back(
+            m_readInt(
+                "Номер разреза: ",
+                1,
+                static_cast<int>(result.fundamentalCuts.size())
+            ) - 1
+        );
+    }
+
+    const GraphCut cut = m_graph->symmetricDifferenceOfFundamentalCuts(
+        result,
+        selectedCutIndices
+    );
+
+    std::cout << "Результат симметрической разности: ";
+
+    if (cut.empty()) {
+        std::cout << "пустой разрез";
+    } else {
+        for (const auto& edge : cut) {
+            std::cout << "(" << edge.from << ", " << edge.to << ") ";
+        }
+    }
+
+    std::cout << "\n";
+}
+
 void CLI::m_printMenu() const {
     std::cout
         << "\n----- Меню -----\n"
@@ -728,6 +798,7 @@ void CLI::m_printMenu() const {
         << "13. Минимальный остов: алгоритм Краскала\n"
         << "14. Алгоритм Эдмондса: максимальное независимое множество рёбер\n"
         << "15. Проверка, является ли неориентированный граф эйлеровым, построение эйлерова цикла\n"
+        << "16. Фундаментальная система разрезов\n"
         << "0. Выход\n";
 }
 
@@ -744,7 +815,7 @@ void CLI::run() {
     while (true) {
         m_printMenu();
 
-        int choice = m_readInt("> ", 0, 15);
+        int choice = m_readInt("> ", 0, 16);
 
         if (choice == 0) {
             break;
@@ -809,6 +880,10 @@ void CLI::run() {
 
             case 15:
                 m_menuCheckEulerianGraph();
+                break;
+
+            case 16:
+                m_menuFundamentalCuts();
                 break;
         }
     }
