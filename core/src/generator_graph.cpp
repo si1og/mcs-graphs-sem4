@@ -1418,26 +1418,26 @@ FleuryResult GeneratorGraph::m_flueryAlgorithm(const Matrix& adjacency) const {
 }
 
 FundamentalCutsResult GeneratorGraph::buildFundamentalCutSystem() const {
-    FundamentalCutsResult result;
+    FundamentalCutsResult result(m_vertexCount);
 
     if (!isMatrixInit.adjacency || !isMatrixInit.weight) {
         return result;
     }
 
-    const KruskalResult spanningTree = m_kruskalAlgorithm();
+    result.spanningTree = m_kruskalAlgorithm();
 
-    if (!spanningTree.success) {
+    if (!result.spanningTree.success) {
         return result;
     }
 
     AdjacencyList tree(m_vertexCount);
 
-    for (const auto& edge : spanningTree.edges) {
+    for (const auto& edge : result.spanningTree.edges) {
         tree[edge.from].push_back(edge.to);
         tree[edge.to].push_back(edge.from);
     }
 
-    for (const auto& removedEdge : spanningTree.edges) {
+    for (const auto& removedEdge : result.spanningTree.edges) {
         std::vector<bool> firstComponent(m_vertexCount, false);
         std::vector<int> stack = {removedEdge.from};
         firstComponent[removedEdge.from] = true;

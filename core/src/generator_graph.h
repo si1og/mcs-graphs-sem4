@@ -162,8 +162,13 @@ struct FundamentalCut {
 };
 
 struct FundamentalCutsResult {
+    KruskalResult spanningTree;
     std::vector<FundamentalCut> fundamentalCuts;
     bool success = false;
+
+    explicit FundamentalCutsResult(int vertexCount)
+        : spanningTree(vertexCount)
+    {}
 };
 
 class GeneratorGraph : public Graph {

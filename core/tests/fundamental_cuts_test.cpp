@@ -12,6 +12,12 @@ void testFundamentalCuts() {
 
     const auto result = graph.buildFundamentalCutSystem();
     require(result.success, "fundamental cut system must be built");
+    require(result.spanningTree.success, "minimum spanning tree must be returned");
+    require(result.spanningTree.edges.size() == 3, "tree must have n - 1 edges");
+    require(
+        std::abs(result.spanningTree.totalWeight - 6) < TEST_EPS,
+        "wrong minimum spanning tree weight"
+    );
     require(result.fundamentalCuts.size() == 3, "tree must produce n - 1 cuts");
 
     require(

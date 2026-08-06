@@ -1,4 +1,5 @@
 #include "cli.h"
+#include <cstddef>
 
 
 CLI::CLI() : m_vertexCount(0) {}
@@ -727,6 +728,31 @@ void CLI::m_menuFundamentalCuts() const {
         m_printError("Не удалось построить минимальный остов связного графа.");
         return;
     }
+
+    std::cout << "\nМатрица весов исходного неориентированного графа:\n";
+    m_graph->getUndirectedWeightMatrix().print();
+
+    std::cout << "\n";
+    std::cout << "Рёбра минимального остова:\n";
+
+    for (size_t i = 0; i < result.spanningTree.edges.size(); ++i) {
+        const auto& edge = result.spanningTree.edges[i];
+        std::cout << i + 1
+                  << ". "
+                  << edge.from
+                  << " -- "
+                  << edge.to
+                  << " вес: "
+                  << edge.weight
+                  << "\n";
+    }
+
+    std::cout << "\nВес минимального остова: "
+              << result.spanningTree.totalWeight
+              << "\n\nМатрица весов минимального остова:\n";
+    result.spanningTree.treeMatrix.print();
+
+    std::cout << "\nФундаментальные разрезы:\n";
 
     for (size_t i = 0; i < result.fundamentalCuts.size(); ++i) {
         const auto& fundamentalCut = result.fundamentalCuts[i];
