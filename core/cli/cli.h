@@ -49,4 +49,5 @@ private:
 
     // lab5
     void m_menuCheckEulerianGraph() const;
+    void m_menuFundamentalCuts() const;
 };

@@ -9,6 +9,7 @@
 #include <limits>
 #include <algorithm>
 #include <functional>
+#include <set>
 
 enum class WeightMode {
     Positive,
@@ -55,7 +56,13 @@ struct Edge {
     int from = 0;
     int to = 0;
 
+    Edge() = default;
     Edge(int from, int to) : from(from), to(to) {};
+
+    bool operator<(const Edge& other) const {
+        return from < other.from ||
+               (from == other.from && to < other.to);
+    }
 };
 
 struct WeightedEdge {
@@ -135,6 +142,17 @@ struct CheckIfEulerianGraphResult {
 };
 
 using FleuryResult = std::vector<int>;
+using GraphCut = std::set<Edge>;
+
+struct FundamentalCut {
+    Edge removedTreeEdge;
+    GraphCut cut;
+};
+
+struct FundamentalCutsResult {
+    std::vector<FundamentalCut> fundamentalCuts;
+    bool success = false;
+};
 
 class GeneratorGraph : public Graph {
 public:
@@ -194,6 +212,12 @@ public:
     //lab5
     CheckIfEulerianGraphResult checkIfEulerianGraph(
         bool allowDisconnectedResult = false
+    ) const;
+
+    FundamentalCutsResult buildFundamentalCutSystem() const;
+    GraphCut symmetricDifferenceOfFundamentalCuts(
+        const FundamentalCutsResult& system,
+        const std::vector<int>& selectedCutIndices
     ) const;
 
 private:
