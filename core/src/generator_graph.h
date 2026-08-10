@@ -280,4 +280,8 @@ private:
 
     // lab5
     FleuryResult m_flueryAlgorithm(const Matrix& adjacency) const;
+    GraphCut m_symmetricDifference(
+        const GraphCut& first,
+        const GraphCut& second
+    ) const;
 };

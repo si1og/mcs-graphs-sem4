@@ -1493,12 +1493,35 @@ GraphCut GeneratorGraph::symmetricDifferenceOfFundamentalCuts(
             throw std::out_of_range("Номер фундаментального разреза вне диапазона");
         }
 
-        for (const auto& edge : system.fundamentalCuts[index].cut) {
-            const auto [position, inserted] = result.insert(edge);
+        result = m_symmetricDifference(
+            result,
+            system.fundamentalCuts[index].cut
+        );
+    }
 
-            if (!inserted) {
-                result.erase(position);
-            }
+    return result;
+}
+
+// этот метод показывает, что используем метод из лекции для вычисления симм. разности
+// можно найти на слайде 18 «Подпространства циклов и коциклов»
+GraphCut GeneratorGraph::m_symmetricDifference(
+    const GraphCut& first,
+    const GraphCut& second
+) const {
+    GraphCut result;
+    GraphCut edgeCoordinates = first;
+    edgeCoordinates.insert(second.begin(), second.end());
+
+    // разрез рассматриваем как вектор векторного пространства, натянутого на множество рёбер
+    // коэффициент равен 1, если ребро входит в разрез, иначе равен 0
+    for (const auto& edge : edgeCoordinates) {
+        const int firstCoefficient = first.count(edge) == 0 ? 0 : 1;
+        const int secondCoefficient = second.count(edge) == 0 ? 0 : 1;
+        const int resultCoefficient =
+            (firstCoefficient + secondCoefficient) % 2;
+
+        if (resultCoefficient == 1) {
+            result.insert(edge);
         }
     }
 
