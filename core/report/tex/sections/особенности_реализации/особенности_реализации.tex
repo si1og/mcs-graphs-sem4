@@ -1,0 +1,109 @@
+\section{Особенности реализации}
+
+\subsection{Среда реализации}
+
+Экспертная система реализована в среде CLIPS. Эта среда подходит для выбранной продукционной модели, так как позволяет описывать знания через правила, хранить ответы пользователя в рабочей памяти и запускать прямой логический вывод. Математическая модель дерева решений описана в разделе~\ref{sec:decision-tree-model}, а в данном разделе рассматривается её программная реализация.
+
+\subsection{Шаблоны}
+
+Рабочая память системы хранит ответы пользователя в однотипных фактах \texttt{known}. Структура такого факта приведена в листинге~\ref{lst:known-template}: поле \texttt{attribute} задаёт имя проверяемого признака, а поле \texttt{value} хранит бинарное значение \texttt{yes} или \texttt{no}.
+
+\begin{listing}[H]
+\caption{Шаблон факта \texttt{known}}
+\label{lst:known-template}
+\inputminted[
+    linenos,
+    numbersep=10pt,
+    firstline=1,
+    lastline=4,
+    fontsize=\small
+]{text}{../fonts_advisor.clp}
+\end{listing}
+
+\subsection{Функции}
+
+Для обработки ввода используется функция \texttt{ask-choice-1-2}, приведённая в листинге~\ref{lst:ask-choice}. Функция повторяет запрос до тех пор, пока пользователь не введёт допустимое значение. Такой вариант выбран вместо свободного ввода строк, чтобы избежать неоднозначных ответов и опечаток.
+
+\textbf{Вход:} значение, вводимое пользователем с клавиатуры.
+
+\textbf{Выход:} число \texttt{1}, если пользователь выбрал отрицательный ответ, или число \texttt{2}, если пользователь выбрал положительный ответ.
+
+\begin{listing}[H]
+\caption{Функция проверки бинарного выбора}
+\label{lst:ask-choice}
+\inputminted[
+    linenos,
+    numbersep=10pt,
+    firstline=7,
+    lastline=20,
+    fontsize=\small
+]{text}{../fonts_advisor.clp}
+\end{listing}
+
+Универсальная функция вопроса \texttt{ask-binary} показана в листинге~\ref{lst:ask-binary}. Для получения ответа пользователя функция вызывает проверку выбора из листинга~\ref{lst:ask-choice}.
+
+\textbf{Вход:} имя проверяемого признака, текст вопроса и выбранный пользователем вариант ответа.
+
+\textbf{Выход:} факт с выбранным значением, добавленный в рабочую память.
+
+\begin{listing}[H]
+\caption{Функция задания бинарного вопроса}
+\label{lst:ask-binary}
+\inputminted[
+    linenos,
+    numbersep=10pt,
+    firstline=24,
+    lastline=38,
+    fontsize=\small
+]{text}{../fonts_advisor.clp}
+\end{listing}
+
+Функция \texttt{print-result}, представленная в листинге~\ref{lst:print-result}, используется всеми листовыми правилами.
+
+\textbf{Вход:} номер листа и список рекомендаций.
+
+\textbf{Выход:} текст результата, напечатанный в консоль; после вывода работа системы завершается.
+
+\begin{listing}[H]
+\caption{Функция вывода результата}
+\label{lst:print-result}
+\inputminted[
+    linenos,
+    numbersep=10pt,
+    firstline=41,
+    lastline=50,
+    fontsize=\small
+]{text}{../fonts_advisor.clp}
+\end{listing}
+
+\subsection{Факты}
+
+Факты создаются только после ответа пользователя на вопрос. Например, если пользователь подтверждает наличие кириллицы, функция из листинга~\ref{lst:ask-binary} добавляет факт \texttt{(known (attribute cyrillic) (value yes))}. Если ответ отрицательный, создаётся аналогичный факт со значением \texttt{no}.
+
+Такая организация делает правила независимыми от порядка ввода: каждое правило проверяет только те факты, которые нужны для соответствующей ветви дерева. Пример правила-вопроса приведён в листинге~\ref{lst:ask-cyrillic}. Оно срабатывает только после подтверждения наличия дополнительного текста и задаёт следующий вопрос о кириллице.
+
+\begin{listing}[H]
+\caption{Правило-вопрос о наличии кириллицы}
+\label{lst:ask-cyrillic}
+\inputminted[
+    linenos,
+    numbersep=10pt,
+    firstline=62,
+    lastline=68,
+    fontsize=\small
+]{text}{../fonts_advisor.clp}
+\end{listing}
+
+Листовые правила проверяют полное сочетание признаков и вызывают функцию вывода результата из листинга~\ref{lst:print-result}. Пример такого правила приведён в листинге~\ref{lst:node-16}; оно соответствует одному из конечных листьев дерева на рисунке~\ref{fig:decision-tree}.
+
+\begin{listing}[H]
+\caption{Пример листового правила}
+\label{lst:node-16}
+\inputminted[
+    linenos,
+    numbersep=10pt,
+    firstline=361,
+    lastline=376,
+    fontsize=\small
+]{text}{../fonts_advisor.clp}
+\end{listing}
