@@ -1,11 +1,11 @@
-% \img[width][label]{path}{caption}
-\NewDocumentCommand{\img}{O{0.9} O{} m m}{
+% \img[width][label][includegraphics options]{path}{caption}
+\NewDocumentCommand{\img}{O{0.9} O{} O{} m m}{
     \begin{figure}[H]
         \centering
-        \includegraphics[width=#1\textwidth]{#3}
-        \caption{#4}
+        \includegraphics[width=#1\textwidth,#3]{#4}
+        \caption{#5}
         \if\relax\detokenize{#2}\relax
-            \label{fig:#3}
+            \label{fig:#4}
         \else
             \label{#2}
         \fi
