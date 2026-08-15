@@ -1,25 +1,21 @@
-% \img[width][label][includegraphics options]{path}{caption}
-\NewDocumentCommand{\img}{O{0.9} O{} O{} m m}{
+% \img[width][includegraphics options]{path}{caption}{post-caption commands}
+\NewDocumentCommand{\img}{O{0.9} O{} m m m}{
     \begin{figure}[H]
         \centering
-        \includegraphics[width=#1\textwidth,#3]{#4}
-        \caption{#5}
-        \if\relax\detokenize{#2}\relax
-            \label{fig:#4}
-        \else
-            \label{#2}
-        \fi
+        \includegraphics[width=#1\textwidth,#2]{#3}
+        \caption{#4}
+        #5
     \end{figure}
 }
 
 % Compatibility alias for documents that still use the old macro name.
 \let\screenshot\img
 
-% \codeListing[language][minted options]{path}{caption}{label}
+% \codeListing[language][minted options]{path}{caption}{post-caption commands}
 \NewDocumentCommand{\codeListing}{O{cpp} O{} m m m}{
     \begin{listing}[H]
         \caption{#4}
-        \label{#5}
+        #5
         \inputminted[
             linenos,
             numbersep=10pt,
@@ -29,8 +25,8 @@
     \end{listing}
 }
 
-% \fullPageFigure[label]{path}{caption}
-\newcommand{\fullPageFigure}[3][]{
+% \fullPageFigure{path}{caption}{post-caption commands}
+\newcommand{\fullPageFigure}[3]{
     \clearpage
     \begingroup
         \pdfpagewidth=420mm
@@ -51,26 +47,21 @@
         \thispagestyle{empty}
         \null
         \refstepcounter{figure}
-        \def\aThreeFigureLabel{#1}
-        \ifx\aThreeFigureLabel\empty
-            \label{fig:#2}
-        \else
-            \label{#1}
-        \fi
+        #3
         \begin{tikzpicture}[remember picture, overlay]
             \node[anchor=north] at ([yshift=-15mm]current page.north) {
                 \includegraphics[
                     width=390mm,
                     height=235mm,
                     keepaspectratio
-                ]{tex/graphics/#2}
+                ]{tex/graphics/#1}
             };
             \node[
                 anchor=south,
                 align=center,
                 font=\normalsize
             ] at ([yshift=10mm]current page.south) {
-                Рис.~\thefigure: #3\\[0.45cm]
+                Рис.~\thefigure: #2\\[0.45cm]
                 \thepage
             };
         \end{tikzpicture}
