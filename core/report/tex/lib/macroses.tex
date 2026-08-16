@@ -11,6 +11,32 @@
 % Compatibility alias for documents that still use the old macro name.
 \let\screenshot\img
 
+% \imgGrid[gap][column count]{cells}{caption}{post-caption commands}
+% Use \gridImage[includegraphics options]{path} for each cell.
+\NewDocumentCommand{\imgGrid}{O{1ex} O{2} m m m}{
+    \begin{figure}[H]
+        \centering
+        \begin{tblr}{
+            width=\textwidth,
+            colspec={*{#2}{X[c,m]}},
+            columns={colsep=\dimexpr#1/2\relax},
+            column{1}={leftsep=0pt},
+            column{Z}={rightsep=0pt},
+            rows={rowsep=\dimexpr#1/2\relax},
+            row{1}={abovesep=0pt},
+            row{Z}={belowsep=0pt}
+        }
+            #3
+        \end{tblr}
+        \caption{#4}
+        #5
+    \end{figure}
+}
+
+\NewDocumentCommand{\gridImage}{O{} m}{
+    \includegraphics[width=\linewidth,#1]{#2}
+}
+
 % \codeListing[language][minted options]{path}{caption}{post-caption commands}
 \NewDocumentCommand{\codeListing}{O{cpp} O{} m m m}{
     \begin{listing}[H]
