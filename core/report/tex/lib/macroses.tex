@@ -11,14 +11,14 @@
 % Compatibility alias for documents that still use the old macro name.
 \let\screenshot\img
 
-% \imgGrid[gap][column count]{cells}{caption}{post-caption commands}
+% \imgGrid[gap](colspec){cells}{caption}{post-caption commands}
 % Use \gridImage[includegraphics options]{path} for each cell.
-\NewDocumentCommand{\imgGrid}{O{1ex} O{2} m m m}{
+\NewDocumentCommand{\imgGrid}{O{1ex} D(){X[c,m] X[c,m]} m m m}{
     \begin{figure}[H]
         \centering
         \begin{tblr}{
             width=\textwidth,
-            colspec={*{#2}{X[c,m]}},
+            colspec={#2},
             columns={colsep=\dimexpr#1/2\relax},
             column{1}={leftsep=0pt},
             column{Z}={rightsep=0pt},
