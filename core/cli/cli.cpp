@@ -635,21 +635,11 @@ void CLI::m_menuCheckEulerianGraph() const {
     auto result = m_graph->checkIfEulerianGraph();
 
     if (!result.transformationCompleted) {
-        m_printWarning(
+        m_printError(
             "Невозможно завершить преобразование, не удалив мост "
             "и не нарушив связность графа."
         );
-        std::cout << "  1 — отменить преобразование\n"
-                  << "  2 — разрешить разбиение графа на компоненты\n";
-
-        const int choice = m_readInt("> ", 1, 2);
-
-        if (choice == 1) {
-            m_printInfo("Преобразование отменено.");
-            return;
-        }
-
-        result = m_graph->checkIfEulerianGraph(true);
+        return;
     }
 
     m_printInfo(
@@ -658,12 +648,7 @@ void CLI::m_menuCheckEulerianGraph() const {
         + " эйлеровым."
     );
 
-    if (!result.resultIsConnected) {
-        m_printWarning(
-            "После преобразования все степени чётные, но граф разделён "
-            "на компоненты. Единый эйлеров цикл построить нельзя."
-        );
-    }
+
 
     if (result.addedEdges.empty() && result.removedEdges.empty()) {
         m_printInfo("Изменения графа не требуются.");
@@ -691,9 +676,8 @@ void CLI::m_menuCheckEulerianGraph() const {
         }
     }
 
-    std::cout << (result.resultIsConnected
-        ? "\nМатрица смежности эйлерова графа:\n"
-        : "\nМатрица графа с чётными степенями:\n");
+    std::cout << "\nМатрица смежности эйлерова графа:\n";
+
     result.eulerianAdjacencyMatrix.print();
 
     if (!result.eulerianCycle.empty()) {

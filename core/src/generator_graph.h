@@ -128,7 +128,6 @@ struct EdmondsBlossomResult {
 struct CheckIfEulerianGraphResult {
     bool isEulerian = false;
     bool transformationCompleted = true;
-    bool resultIsConnected = true;
     std::vector<Edge> addedEdges;
     std::vector<Edge> removedEdges;
     std::vector<int> eulerianCycle;
@@ -137,7 +136,6 @@ struct CheckIfEulerianGraphResult {
     CheckIfEulerianGraphResult(
         bool isEulerian,
         bool transformationCompleted,
-        bool resultIsConnected,
         std::vector<Edge>&& added,
         std::vector<Edge>&& removed,
         std::vector<int>&& cycle,
@@ -145,7 +143,6 @@ struct CheckIfEulerianGraphResult {
     )
         : isEulerian(isEulerian),
           transformationCompleted(transformationCompleted),
-          resultIsConnected(resultIsConnected),
           addedEdges(std::move(added)),
           removedEdges(std::move(removed)),
           eulerianCycle(std::move(cycle)),

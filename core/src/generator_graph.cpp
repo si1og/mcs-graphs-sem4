@@ -1365,7 +1365,6 @@ CheckIfEulerianGraphResult GeneratorGraph::checkIfEulerianGraph(
     return CheckIfEulerianGraphResult(
         isEulerian,
         transformationCompleted,
-        resultIsConnected,
         std::move(addedEdges),
         std::move(removedEdges),
         std::move(eulerianCycle),

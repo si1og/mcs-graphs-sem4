@@ -6,10 +6,6 @@ void testEulerianTransformation() {
 
     const auto pathResult = path.checkIfEulerianGraph();
     require(pathResult.transformationCompleted, "path graph must be transformed");
-    require(
-        pathResult.resultIsConnected,
-        "safe transformation must preserve connectivity"
-    );
     requireEvenDegrees(pathResult.eulerianAdjacencyMatrix);
     require(
         isConnected(pathResult.eulerianAdjacencyMatrix),
@@ -56,7 +52,7 @@ void testEulerianTransformation() {
         "allowed bridge removal must complete"
     );
     require(
-        !disconnectedResult.resultIsConnected,
+        !isConnected(disconnectedResult.eulerianAdjacencyMatrix),
         "bridge removal must mark the result disconnected"
     );
     requireEvenDegrees(disconnectedResult.eulerianAdjacencyMatrix);
