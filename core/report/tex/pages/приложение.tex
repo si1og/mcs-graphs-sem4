@@ -1,15 +1,20 @@
-\section*{Приложение. Реализация экспертной системы в
-среде CLIPS}
-\addcontentsline{toc}{section}{Приложение. Реализация экспертной системы в
-среде CLIPS}
+\section*{Приложение. Исходный код программы}
+\addcontentsline{toc}{section}{Приложение. Исходный код программы}
 
+\begingroup
 \renewcommand{\theFancyVerbLine}{%
-    \scriptsize\ttfamily\textcolor{gray}{\arabic{FancyVerbLine}}%
+    \tiny\ttfamily\textcolor{gray}{\arabic{FancyVerbLine}}%
 }
 
-\inputminted[
-    linenos,
-    numbersep=10pt,
-    firstnumber=1,
-    fontsize=\scriptsize
-]{text}{../fonts_advisor.clp}
+\codeListing[cpp][fontsize=\tiny]{../src/constants.h}{Константы программы}{\label{lst:appendix-constants}}
+\codeListing[cpp][fontsize=\tiny]{../src/flows.h}{Структуры данных для работы с потоками}{\label{lst:appendix-flows}}
+\codeListing[cpp][fontsize=\tiny]{../src/matrix.h}{Объявление класса матрицы}{\label{lst:appendix-matrix-h}}
+\codeListing[cpp][fontsize=\tiny]{../src/matrix.cpp}{Реализация класса матрицы}{\label{lst:appendix-matrix-cpp}}
+\codeListing[cpp][fontsize=\tiny]{../src/graph.h}{Объявление класса графа}{\label{lst:appendix-graph-h}}
+\codeListing[cpp][fontsize=\tiny]{../src/graph.cpp}{Реализация класса графа}{\label{lst:appendix-graph-cpp}}
+\codeListing[cpp][fontsize=\tiny]{../src/generator_graph.h}{Объявление генератора графа}{\label{lst:appendix-generator-h}}
+\codeListing[cpp][fontsize=\tiny]{../src/generator_graph.cpp}{Реализация генератора графа}{\label{lst:appendix-generator-cpp}}
+\codeListing[cpp][fontsize=\tiny]{../cli/cli.h}{Объявление интерфейса командной строки}{\label{lst:appendix-cli-h}}
+\codeListing[cpp][fontsize=\tiny]{../cli/cli.cpp}{Реализация интерфейса командной строки}{\label{lst:appendix-cli-cpp}}
+
+\endgroup

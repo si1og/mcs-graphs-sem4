@@ -1,6 +1,64 @@
 \section{Результаты работы}
 \label{sec:work-results}
 
+\subsection{Лабораторная работа № 1}
+
+В результате генерации получен связный ориентированный граф из 10 вершин. Матрица смежности и вычисленные для этого графа эксцентриситеты, диаметр, центральная и диаметральная вершины приведены на рис.~\ref{fig:lab1-graph-properties}.
+
+\imgGrid[1ex](X[1,c,m] X[1,c,m]){
+    \gridImage{img/lab1-generated-graph.png} &
+    \gridImage{img/lab1-eccentricities.png}
+}{Генерация графа и вычисление его характеристик}{\label{fig:lab1-graph-properties}}
+
+Программа проверяет ввод количества вершин и пунктов меню. Примеры сообщений при некорректном вводе показаны на рис.~\ref{fig:lab1-input-errors}.
+
+\imgGrid[1ex](X[1,c,m] X[2,c,m]){
+    \gridImage{img/lab1-invalid-vertex-count.png} &
+    \gridImage{img/lab1-invalid-menu-choice.png}
+}{Обработка некорректного ввода}{\label{fig:lab1-input-errors}}
+
+Сгенерированная матрица положительных весов приведена на рис.~\ref{fig:lab1-positive-weights}.
+
+\img[0.72]{img/lab1-positive-weight-matrix.png}{Матрица положительных весов}{\label{fig:lab1-positive-weights}}
+
+Результат метода Шимбелла для маршрутов из двух рёбер приведён на рис.~\ref{fig:lab1-shimbell-two}. Для каждой пары вершин получен минимальный вес маршрута заданной длины.
+
+\img[0.72]{img/lab1-shimbell-min-2-edges.png}{Минимальные веса маршрутов из двух рёбер}{\label{fig:lab1-shimbell-two}}
+
+При длине девять рёбер существует маршрут из вершины 0 в вершину 9, а при нулевой длине нулевые значения остаются только на диагонали. Соответствующие матрицы приведены на рис.~\ref{fig:lab1-shimbell-boundary}.
+
+\imgGrid[1ex]{
+    \gridImage{img/lab1-shimbell-min-9-edges.png} &
+    \gridImage{img/lab1-shimbell-zero-edges.png}
+}{Результаты метода Шимбелла для девяти и нуля рёбер}{\label{fig:lab1-shimbell-boundary}}
+
+До генерации весовой матрицы выполнение метода Шимбелла не начинается. Также проверяется допустимость введённого количества рёбер. Эти случаи показаны на рис.~\ref{fig:lab1-shimbell-errors}.
+
+\imgGrid[1ex]{
+    \gridImage{img/lab1-shimbell-missing-weight-matrix.png} &
+    \gridImage{img/lab1-shimbell-invalid-edge-count.png}
+}{Обработка ошибок при запуске метода Шимбелла}{\label{fig:lab1-shimbell-errors}}
+
+Примеры существующего маршрута из вершины 0 в вершину 7 и отсутствующего маршрута из вершины 7 в вершину 0 приведены на рис.~\ref{fig:lab1-routes}.
+
+\imgGrid[1ex]{
+    \gridImage{img/lab1-route-exists.png} &
+    \gridImage{img/lab1-route-missing.png}
+}{Проверка маршрутов между вершинами}{\label{fig:lab1-routes}}
+
+\subsection{Лабораторная работа № 2}
+
+Для сгенерированного графа найдены точки сочленения 1 и 2. Модифицированный алгоритм Дейкстры построил маршрут из вершины 0 в вершину 7, определил его вес и сформировал вектор расстояний. Результаты приведены на рис.~\ref{fig:lab2-algorithms}.
+
+\imgGrid[1ex](X[1,c,m] X[2,c,m]){
+    \gridImage{img/lab2-articulation-points.png} &
+    \gridImage{img/lab2-dijkstra-negative.png}
+}{Результаты поиска точек сочленения и кратчайшего пути}{\label{fig:lab2-algorithms}}
+
+Попытка запустить алгоритм Дейкстры до генерации весовой матрицы завершается сообщением, приведённым на рис.~\ref{fig:lab2-dijkstra-error}.
+
+\img[0.75]{img/lab2-dijkstra-missing-weight-matrix.png}{Проверка наличия весовой матрицы}{\label{fig:lab2-dijkstra-error}}
+
 Для сравнения было выполнено 100 запусков на случайных графах из 10 вершин. В каждом запуске оба алгоритма работали на одном графе. Количество итераций в отдельных запусках показано на рис.~\ref{fig:lab2-iterations-by-run}.
 
 \img[1]{tex/graphics/python/lab2-iterations-by-run.png}{Количество итераций в каждом запуске}{\label{fig:lab2-iterations-by-run}}
@@ -10,3 +68,69 @@
 \img[1]{tex/graphics/python/lab2-iterations-histogram.png}{Распределение количества итераций за 100 запусков}{\label{fig:lab2-iterations-histogram}}
 
 Поиск точек сочленения во всех случаях выполнил 100 итераций. В 89 запусках поиск точек сочленения потребовал меньше итераций, а в 11 запусках значения совпали. Следовательно, на проведённой серии запусков поиск точек сочленения оказался эффективнее по количеству итераций.
+
+\subsection{Лабораторная работа № 3}
+
+Для ориентированного графа сгенерированы матрицы пропускных способностей и стоимостей, приведённые на рис.~\ref{fig:lab3-capacity-cost}.
+
+\img[0.68]{img/lab3-capacity-cost-matrices.png}{Матрицы пропускных способностей и стоимостей}{\label{fig:lab3-capacity-cost}}
+
+Для истока 0 и стока 9 алгоритм Форда~--- Фалкерсона получил максимальный поток величины 4. Матрица потоков приведена на рис.~\ref{fig:lab3-max-flow}.
+
+\img[0.68]{img/lab3-max-flow.png}{Результат вычисления максимального потока}{\label{fig:lab3-max-flow}}
+
+Заданная величина потока составила 2. Поток этой величины построен успешно, его минимальная стоимость равна 38. Результирующие матрицы приведены на рис.~\ref{fig:lab3-min-cost-flow}.
+
+\img[0.55]{img/lab3-min-cost-flow.png}{Результат вычисления потока минимальной стоимости}{\label{fig:lab3-min-cost-flow}}
+
+При отсутствии матрицы пропускных способностей вычисление максимального потока не начинается, что показано на рис.~\ref{fig:lab3-max-flow-error}.
+
+\img[0.75]{img/lab3-max-flow-missing-capacity-matrix.png}{Проверка наличия матрицы пропускных способностей}{\label{fig:lab3-max-flow-error}}
+
+\subsection{Лабораторная работа № 4}
+
+По матрице Кирхгофа и её алгебраическому дополнению вычислено число остовных деревьев, равное 271. Результат приведён на рис.~\ref{fig:lab4-kirchhoff}.
+
+\img[0.52]{img/lab4-kirchhoff-spanning-tree-count.png}{Вычисление числа остовных деревьев}{\label{fig:lab4-kirchhoff}}
+
+Алгоритм Краскала построил минимальный остов весом 27. Остов был закодирован кодом Прюфера и затем восстановлен; полученная матрица совпала с исходной матрицей остова. Результат приведён на рис.~\ref{fig:lab4-kruskal-prufer}.
+
+\img[0.6]{img/lab4-kruskal-prufer.png}{Минимальный остов и проверка кода Прюфера}{\label{fig:lab4-kruskal-prufer}}
+
+Алгоритм Эдмондса нашёл пять независимых рёбер в исходном графе и четыре независимых ребра в минимальном остове. Результаты приведены на рис.~\ref{fig:lab4-edmonds}.
+
+\imgGrid[1ex]{
+    \gridImage{img/lab4-edmonds-original-graph.png} &
+    \gridImage{img/lab4-edmonds-minimum-spanning-tree.png}
+}{Максимальные независимые множества рёбер исходного графа и остова}{\label{fig:lab4-edmonds}}
+
+Для построения минимального остова необходима весовая матрица. Проверка её наличия в алгоритмах Краскала и Эдмондса показана на рис.~\ref{fig:lab4-errors}.
+
+\imgGrid[1ex]{
+    \gridImage{img/lab4-kruskal-missing-weight-matrix.png} &
+    \gridImage{img/lab4-edmonds-missing-weight-matrix.png}
+}{Обработка ошибок при отсутствии весовой матрицы}{\label{fig:lab4-errors}}
+
+\subsection{Лабораторная работа № 5}
+
+Исходный граф не являлся эйлеровым. После удаления и добавления рёбер степени всех вершин стали чётными, после чего был построен эйлеров цикл. Выполненные изменения и результат показаны на рис.~\ref{fig:lab5-eulerian-transformation}.
+
+\img[0.82]{img/lab5-eulerian-transformation.png}{Преобразование графа и построение эйлерова цикла}{\label{fig:lab5-eulerian-transformation}}
+
+Для графа из двух вершин единственное ребро является мостом. Поэтому программа прекращает преобразование и сообщает о невозможности сохранить связность. Исходный граф и сообщение приведены на рис.~\ref{fig:lab5-connectivity-error}.
+
+\imgGrid[1ex](X[1,c,m] X[2,c,m]){
+    \gridImage{img/lab5-single-edge-graph.png} &
+    \gridImage{img/lab5-eulerian-connectivity-error.png}
+}{Проверка сохранения связности при преобразовании графа}{\label{fig:lab5-connectivity-error}}
+
+На основе минимального остова получена фундаментальная система из девяти разрезов. Для двух выбранных разрезов вычислена симметрическая разность. Результаты приведены на рис.~\ref{fig:lab5-fundamental-cuts}.
+
+\imgGrid[1ex]{
+    \gridImage{img/lab5-fundamental-cuts-part-1.png} &
+    \gridImage{img/lab5-fundamental-cuts-part-2.png}
+}{Построение фундаментальной системы и симметрической разности разрезов}{\label{fig:lab5-fundamental-cuts}}
+
+Если весовая матрица не сгенерирована, построение фундаментальных разрезов не выполняется. Соответствующее сообщение показано на рис.~\ref{fig:lab5-fundamental-cuts-error}.
+
+\img[0.75]{img/lab5-fundamental-cuts-missing-matrices.png}{Проверка исходных данных для построения разрезов}{\label{fig:lab5-fundamental-cuts-error}}
