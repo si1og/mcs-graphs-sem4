@@ -39,16 +39,17 @@
 
 % \codeListing[language][minted options]{path}{caption}{post-caption commands}
 \NewDocumentCommand{\codeListing}{O{cpp} O{} m m m}{
-    \begin{listing}[H]
-        \caption{#4}
-        #5
-        \inputminted[
-            linenos,
-            numbersep=10pt,
-            fontsize=\small,
-            #2
-        ]{#1}{#3}
-    \end{listing}
+    \par\addvspace{\baselineskip}
+    \captionof{listing}{#4}
+    #5
+    \inputminted[
+        linenos,
+        firstnumber=1,
+        numbersep=10pt,
+        fontsize=\small,
+        #2
+    ]{#1}{#3}
+    \par\addvspace{\baselineskip}
 }
 
 % \fullPageFigure{path}{caption}{post-caption commands}
